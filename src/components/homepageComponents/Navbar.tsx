@@ -1,6 +1,6 @@
 import useViewportWidth from "../../hooks/useViewportWidth"
 import MenuIcon from '@mui/icons-material/Menu';
-import type { NavLinkType } from "../../interfaces";
+import type { NavLinkType } from "../../types";
 import { NavLink } from "react-router-dom";
 
 function Navbar() {
