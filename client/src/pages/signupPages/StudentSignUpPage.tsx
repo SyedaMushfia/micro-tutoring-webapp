@@ -97,13 +97,20 @@ function StudentSignUpPage() {
       }
   }
 
-  const isFormValid = () => {
-        const allFieldsValid = formData.grade && formData.curriculum && formData.gender && formData.institutionOrSchool.trim() !== '';
-        return allFieldsValid;
-  }
-
   const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
+    const newErrors = {
+      grade: formData.grade ? "" : "This field is required",
+      curriculum: formData.curriculum ? "" : "This field is required",
+      gender: formData.gender ? "" : "This field is required",
+      institutionOrSchool: formData.institutionOrSchool ? "" : "This field is required",
+    };
+
+    setErrors(newErrors);
+
+    const hasErrors = Object.values(newErrors).some(error => error !== "");
+    if (hasErrors) return;
+
     const data = new FormData();
 
     data.append("grade", formData.grade);
@@ -217,7 +224,6 @@ function StudentSignUpPage() {
                                     if (!formData.institutionOrSchool) {
                                       setErrors(prev => ({ ...prev, institutionOrSchool: "This field is required" }));
                                     }}}
-                                  required
                                   className="md:w-[18vw] sm:w-[32vw] xs:w-[40vw] h-[40px] !bg-white rounded-md px-[3%] border-[1px] border-[#dadada] focus:border-blue-500 focus:border-[2px] focus:ring-[1px] focus:ring-blue-200 focus:ring-opacity-50 outline-none"/>
                           </div>
                           {errors.institutionOrSchool && <div className='flex md:ml-[40%] sm:ml-[47%] xs:ml-[43%] mt-[-4px] gap-[2px] items-center text-red-600'>
@@ -249,7 +255,7 @@ function StudentSignUpPage() {
                         onChange={handleImageChange}
                       />
                     </div>
-                    <button type='submit' disabled={!isFormValid()} className='bg-[#2e294e] md:w-[18vw] sm:w-[50vw] xs:w-[70vw] py-[2.5%] md:ml-[20%] sm:ml-[8%] xs:ml-0 font-semibold text-white rounded-full shadow-md hover:shadow-lg hover:bg-[#5e578a] transition-all duration-300'>Finish</button>
+                    <button type='submit' className='bg-[#2e294e] md:w-[18vw] sm:w-[50vw] xs:w-[70vw] py-[2.5%] md:ml-[20%] sm:ml-[8%] xs:ml-0 font-semibold text-white rounded-full shadow-md hover:shadow-lg hover:bg-[#5e578a] transition-all duration-300'>Finish</button>
                 </div>
             </form>
           </>

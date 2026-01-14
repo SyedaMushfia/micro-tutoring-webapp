@@ -3,7 +3,7 @@ import userModel from "../models/userModel";
 
 export const getUserData = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?._id; // <-- secure and correct
+    const userId = req.user?._id; 
 
     if (!userId) {
       return res.json({ success: false, message: "Not authorized" });

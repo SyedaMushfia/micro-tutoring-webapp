@@ -9,12 +9,16 @@ import connectDB from "./src/config/db";
 import authRouter from './src/routes/authRoutes'
 import userRouter from './src/routes/userRoutes'
 import questionRouter from './src/routes/questionRoutes'
+import sessionRouter from './src/routes/sessionRoutes'
+import chatRouter from './src/routes/chatRoutes'
+import rechargeRouter from './src/routes/rechargeRoutes'
+import earningRouter from "./src/routes/earningRoutes";
 import http from "http";
 import { Server } from "socket.io";
-import userModel from "./src/models/userModel";
+import { setupSocket } from "./src/socket";
 
 const app: Express = express();
-const server = http.createServer(app);
+const server: http.Server = http.createServer(app);
 
 const port: number = parseInt(process.env.PORT as string, 10) || 4000;
 connectDB();
@@ -27,41 +31,8 @@ const io = new Server(server, {
     }
 })
 
-const onlineTutors: Record<string, string> = {};
+setupSocket(io);
 
-io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
-
-    socket.on("tutor-online", async ({ userId }) => {
-        const tutor = await userModel.findById(userId);
-
-        if (!tutor || tutor.role !== "tutor") return;
-
-        onlineTutors[socket.id] = userId;
-
-        await userModel.findByIdAndUpdate(userId, {
-            isOnline: true
-        })
-
-        socket.join("online-tutors");
-        io.emit("tutor-status-updated");
-    });
-
-    socket.on("disconnect", async () => {
-        const userId = onlineTutors[socket.id];
-
-        if (userId) {
-            await userModel.findByIdAndUpdate(userId, {
-                isOnline: false
-            });
-
-            delete onlineTutors[socket.id];
-            io.emit("tutor-status-updated");
-        }
-
-        console.log("Socket disconnected", socket.id);
-    })
-})
 
 // Middleware
 app.use(express.json());
@@ -77,7 +48,11 @@ app.get("/", (req, res) => {
 });
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
-app.use('/api/question', questionRouter)
+app.use('/api/question', questionRouter);
+app.use('/api/session', sessionRouter);
+app.use("/api/chat", chatRouter);
+app.use("/api/recharge", rechargeRouter);
+app.use("/api/earnings", earningRouter);
 
 // Start server
 server.listen(port, () => console.log(`Server running on port ${port}`));

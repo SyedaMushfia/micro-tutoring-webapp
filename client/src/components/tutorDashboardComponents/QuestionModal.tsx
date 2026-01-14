@@ -4,7 +4,7 @@ import type { QuestionRow } from '../../types'
 interface QuestionModelProps {
     row: QuestionRow;
     onClose: () => void;
-    onAccept: () => void;
+    onAccept: (row: QuestionRow) => void;
 }
 
 function QuestionModal({ row, onClose, onAccept}: QuestionModelProps) {
@@ -30,7 +30,7 @@ function QuestionModal({ row, onClose, onAccept}: QuestionModelProps) {
             </p>
             {row.image && <div className='mt-4 rounded-lg'><img src={row.image} alt="Question Image" className='border-2 rounded-lg' /></div>}
             <div className='flex justify-between'>
-              <button className="mt-6 bg-[#d8d2ff] text-[#2e294e] px-6 py-2 rounded-xl font-semibold shadow-md hover:bg-[#d1e674]" onClick={onAccept}>
+              <button className="mt-6 bg-[#d8d2ff] text-[#2e294e] px-6 py-2 rounded-xl font-semibold shadow-md hover:bg-[#d1e674]" onClick={() => onAccept(row)}>
                 Accept
               </button>
               <button className="mt-6 bg-[#fdd2d2] text-[#2e294e] px-8 py-2 rounded-xl font-semibold shadow-md hover:bg-red-400" onClick={onClose}>

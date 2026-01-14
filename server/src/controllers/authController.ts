@@ -2,6 +2,7 @@ import { Request, Response } from "../types/express";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import userModel from "../models/userModel";
+import validator from 'validator';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -14,6 +15,21 @@ export const registerUser = async (req: Request, res: Response) => {
 
     if (!firstName || !lastName || !email || !password || !role) {
         return res.json({success: false, message: 'Missing Details'})
+    }
+
+    if (firstName.length < 2 || lastName.length < 2) {
+        return res.json({ success: false, message: 'First and last name must be at least 2 characters' });
+    }
+
+    if (!validator.isEmail(email)) {
+        return res.json({ success: false, message: 'Enter a valid email' });
+    }
+
+    if (!validator.isStrongPassword(password, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1 })) {
+        return res.json({ 
+            success: false, 
+            message: 'Password must have 8 chars, uppercase, lowercase, & number.' 
+        });
     }
 
     try {
@@ -59,13 +75,13 @@ export const loginUser = async (req: Request, res: Response) => {
         const user = await userModel.findOne({email});
 
         if (!user) {
-            return res.json({success: false, message: 'Invalid email. Try again!'})
+            return res.json({success: false, message: 'Invalid email or password.'})
         }
 
         const passwordMatch = await bcrypt.compare(password, user.password);
 
         if (!passwordMatch) {
-            return res.json({success: false, message: 'Invalid password. Try again!'})
+            return res.json({success: false, message: 'Invalid email or password'})
         }
 
         const token = jwt.sign({id: user._id}, JWT_SECRET, { expiresIn: '7d'})
@@ -119,8 +135,6 @@ export const isAuthenticated = (req: Request, res: Response) => {
 }
 
 export const setupProfile = async (req: Request, res: Response) => {
-    console.log("REQ BODY:", req.body);
-console.log("REQ USER:", req.user);
 
     try {
 

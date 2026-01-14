@@ -8,7 +8,7 @@ import { useAppContext } from '../../context/AppContext';
 function AskQuestion() {
   const [image, setImage] = useState<File | null>(null);
   const [previewImg, setPreviewImg] = useState<string | null>(null);
-  const { backendUrl } = useAppContext();
+  const { backendUrl, userData } = useAppContext();
 
   const subjects = [
   "Mathematics",
@@ -32,6 +32,8 @@ function AskQuestion() {
 
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [newQuestion, setNewQuestion] = useState(null);
+  const [showInsufficientBalanceModal, setShowInsufficientBalanceModal] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const {name, value} = e.target;
@@ -48,9 +50,17 @@ function AskQuestion() {
       }
   }
 
+  const questionPrice = 250;
+
   // Validate fields and open available tutor modal
   const handleClickAskQuestion = async (e: FormEvent) => {
     e.preventDefault();
+
+    const studentBalance = parseFloat(userData?.student?.balance ?? "0");
+    if (studentBalance < questionPrice) {
+        setShowInsufficientBalanceModal(true);
+        return;
+    }
 
     if (!questionData.subject || !questionData.topic || !questionData.question) {
         setError('Please fill in all fields before submitting.');
@@ -69,6 +79,7 @@ function AskQuestion() {
         const response = await axios.post(`${backendUrl}/api/question/askQuestion`, formData, { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } });
 
         if (response.data.success) {
+            setNewQuestion(response.data.question)
             setShowModal(true);
         }
     } catch (error: any) {
@@ -132,7 +143,22 @@ function AskQuestion() {
                 <button type='submit' onClick={handleClickAskQuestion} className='bg-[#2e294e] hover:bg-[#675cae] px-10 py-4 rounded-full text-white'>Ask Question</button>
             </div>
         </form>
-        {showModal && <AvailableTutorsModal onShowModal={setShowModal} subject={questionData.subject}/>}
+        {showModal && newQuestion && <AvailableTutorsModal onShowModal={setShowModal} subject={questionData.subject} questionData={newQuestion}/>}
+        {showInsufficientBalanceModal && (
+            <div className="fixed inset-0 flex justify-center items-center bg-black/50 z-50">
+                <div className="bg-white p-6 rounded-xl shadow-lg w-[90%] max-w-md text-center">
+                    <h2 className="text-xl font-semibold mb-4">Insufficient Balance</h2>
+                    <p>Your balance is less than Rs. {questionPrice}.</p>
+                    <p className="mb-6">Please recharge to ask a question.</p>
+                    <button 
+                        onClick={() => setShowInsufficientBalanceModal(false)} 
+                        className="bg-[#2e294e] hover:bg-[#675cae] px-6 py-3 rounded-full text-white"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        )}
     </div>
   )
 }

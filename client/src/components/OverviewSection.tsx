@@ -3,19 +3,22 @@ import PaidIcon from '@mui/icons-material/Paid';
 import StarIcon from '@mui/icons-material/Star';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import InfoIcon from '@mui/icons-material/Info';
-import type { Role } from '../../types';
+import type { Role } from '../types';
 import QuizIcon from '@mui/icons-material/Quiz';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
 
 interface OverviewSectionProps {
   role: Role;
+  earnings?: number;
+  spendings?: number;
+  questionsCount: number;
 }
 
-function OverviewSection({ role }: OverviewSectionProps) {
+function OverviewSection({ role, earnings, spendings, questionsCount }: OverviewSectionProps) {
   const tutorCards = [
     {
       name: 'Earnings',
-      value: 'Rs.5000',
+      value: `Rs.${earnings ?? 0}`,
       icon: PaidIcon
     },
     {
@@ -25,7 +28,7 @@ function OverviewSection({ role }: OverviewSectionProps) {
     },
     {
       name: 'Answered Questions',
-      value: '50',
+      value: `${questionsCount ?? 0}`,
       icon: QuestionAnswerIcon
     }
   ]
@@ -33,17 +36,17 @@ function OverviewSection({ role }: OverviewSectionProps) {
   const studentCards = [
     {
       name: 'Questions Asked',
-      value: '16',
+      value: `${questionsCount ?? 0}`,
       icon: QuizIcon
     },
     {
       name: 'Study Hours',
-      value: '12 hrs',
+      value: '20 mins',
       icon: AccessTimeFilledIcon
     },
     {
       name: 'Total Paid',
-      value: 'Rs.5000',
+      value: `Rs.${spendings ?? 0}`,
       icon: PaidIcon
     }
   ]
@@ -54,7 +57,6 @@ function OverviewSection({ role }: OverviewSectionProps) {
   return (
     <div className='sm:flex sm:flex-row sm:justify-between xs:flex xs:flex-col xs:items-center xs:gap-4 sm:my-[1.5%] xs:my-[4%]'>
       {cards.map(card => (
-        <>
           <div key={card.name} className='bg-[#f2f4fc] shadow-lg sm:w-[32%] xs:w-[75%] h-[150px] sm:px-[3%] xs:px-[10%] rounded-2xl flex items-center justify-between'>
             <div className='flex flex-col '>
               <h1 className='lg:text-[45px] md:text-[35px] sm:text-[30px] xs:text-[40px] font-semibold text-[#2e294e] tracking-wide'>{card.value}</h1>
@@ -64,10 +66,9 @@ function OverviewSection({ role }: OverviewSectionProps) {
               </div>
             </div>
             <div className=''>
-              <card.icon className='lg:!text-[80px] md:!text-[60px] sm:!text-[50px] xs:!text-[80px] text-[#c5d86d]'/>
+              <card.icon className='lg:!text-[80px] md:!text-[60px] sm:!text-[50px] xs:!text-[80px] text-[#c5d86d] md:ml-0 sm:ml-[-20px]'/>
             </div>
           </div>
-        </>
       ))}
     </div>
   )

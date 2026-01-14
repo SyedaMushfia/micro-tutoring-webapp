@@ -17,16 +17,19 @@ export type InputField = {
 export type MenuItem = {
   icon: ReactNode;
   name: string;
+  path: string;
 }
 
 export type Role = "student" | "tutor";
 
 export type QuestionRow = {
-  id: number;
+  id: string;
   subject: string;
   question: string;
   grade: string;
   student: string;
+  studentId: string;
   image?: string;
   button?: string;
+  timeLeft: number;
 }

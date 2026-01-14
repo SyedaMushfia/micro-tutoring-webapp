@@ -1,21 +1,25 @@
-import mongoose, {Document, Model} from "mongoose";
+import mongoose, { Document, Model } from "mongoose";
 
-interface Message extends Document {
-    senderId: string;
-    receiverId: string;
-    text: string;
-    image?: string;
-    seen: boolean;
+export interface Message extends Document {
+  sessionId: string;
+  senderId: mongoose.Types.ObjectId;
+  senderName: string;
+  message?: string;
+  image?: string;
+  createdAt: Date;
 }
 
-const messageSchema = new mongoose.Schema({
-    senderId: {type: mongoose.Types.ObjectId, ref: "User", required: true},
-    receiverId: {type: mongoose.Types.ObjectId, ref: "User", required: true},
-    text: {type: String},
-    image: {type: String},
-    seen: {type: Boolean, default: false},
-}, { timestamps: true });
+const messageSchema = new mongoose.Schema(
+  {
+    sessionId: { type: String, required: true, index: true },
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    senderName: { type: String, required: true },
+    message: { type: String },
+    image: { type: String },
+    createdAt: { type: Date, default: Date.now },
+  }
+);
 
-const messageModel: Model<Message> = mongoose.model<Message>('Message', messageSchema);
+const messageModel: Model<Message> = mongoose.models.Message || mongoose.model<Message>("Message", messageSchema);
 
 export default messageModel;

@@ -1,7 +1,7 @@
 import React from 'react'
 import type { InputField } from '../types';
 import { useState } from 'react';
-import { validateEmail } from '../utils';
+import validator from 'validator';
 import ErrorIcon from '@mui/icons-material/Error';
 import { useAppContext } from '../context/AppContext';
 import axios from 'axios';
@@ -79,50 +79,116 @@ function SignUpForm({onSignUpClicked, role}: SignUpFormProps) {
           ...prevErrors,
           [id]: ''
         }));
+
+        if (id === 'email') {
+            setSignupError('');
+        }
+
       }
     
       const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-        const {id, value} = e.target;
-    
+        const { id, value } = e.target;
         let errorMessage = '';
-    
-        switch (id) {
+
+        if (!value.trim()) {
+            errorMessage = 'This field is required';
+        } else {
+            switch (id) {
             case 'firstName':
-            if (value.trim().length < 2)
+                if (value.trim().length < 2)
                 errorMessage = 'First name should be at least 2 characters';
-            break;
-    
+                break;
+
             case 'lastName':
-            if (value.trim().length < 2)
+                if (value.trim().length < 2)
                 errorMessage = 'Last name should be at least 2 characters';
-            break;
-    
+                break;
+
             case 'email':
-            if (!validateEmail(value))
+                if (!validator.isEmail(value))
                 errorMessage = 'Enter a valid email address';
-            break;
-    
+                break;
+
             case 'password':
-            if (value.trim().length < 8)
-                errorMessage = 'Password must have more than 8 characters';
-            break;
-    
+                if (!validator.isStrongPassword(value, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1}))
+                errorMessage = 'Password must have 8 chars, uppercase, lowercase, & number.';
+                break;
+
             case 'confirmPassword':
-            if (value !== formData.password)
+                if (value !== formData.password)
                 errorMessage = 'Passwords do not match';
-            break;
+                break;
+            }
         }
-            
+
         setErrors(prev => ({
             ...prev,
-            [id]: errorMessage,
+            [id]: errorMessage
         }));
-      }
+    };
+
     
-    const isFormValid = () => {
-        const allFieldsValid = inputFields.every(field => formData[field.id as keyof typeof formData] && !errors[field.id as keyof typeof errors]);
-        return allFieldsValid;
-    }
+    const isFormValid = (): boolean => {
+    let valid = true;
+    const newErrors = { ...errors };
+
+    inputFields.forEach(field => {
+        const value = formData[field.id as keyof typeof formData];
+
+        if (!value.trim()) {
+            newErrors[field.id as keyof typeof errors] = 'This field is required';
+            valid = false;
+            return;
+        }
+
+
+        switch (field.id) {
+            case 'firstName':
+                if (!value || value.trim().length < 2) {
+                    newErrors.firstName = 'First name should be at least 2 characters';
+                    valid = false;
+                } else {
+                    newErrors.firstName = '';
+                }
+                break;
+            case 'lastName':
+                if (!value || value.trim().length < 2) {
+                    newErrors.lastName = 'Last name should be at least 2 characters';
+                    valid = false;
+                } else {
+                    newErrors.lastName = '';
+                }
+                break;
+            case 'email':
+                if (!validator.isEmail(value)) {
+                    newErrors.email = 'Enter a valid email address';
+                    valid = false;
+                } else {
+                    newErrors.email = '';
+                }
+                break;
+            case 'password':
+                if (!validator.isStrongPassword(value, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1})) {
+                    newErrors.password = 'Password must have 8 chars, uppercase, lowercase, & number.';
+                    valid = false;
+                } else {
+                    newErrors.password = '';
+                }
+                break;
+            case 'confirmPassword':
+                if (!value || value !== formData.password) {
+                    newErrors.confirmPassword = 'Passwords do not match';
+                    valid = false;
+                } else {
+                    newErrors.confirmPassword = '';
+                }
+                break;
+        }
+    });
+
+    setErrors(newErrors);
+    return valid;
+};
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -138,8 +204,7 @@ function SignUpForm({onSignUpClicked, role}: SignUpFormProps) {
         }, { withCredentials: true });
 
         if (!response.data.success) {
-          setSignupError(response.data.message);
-          alert("Email already exists. Please log in!");
+          setSignupError(response.data.message || "Email already exists");
           setIsLoggedIn(false);
           onSignUpClicked(false);
           return;
@@ -167,9 +232,9 @@ function SignUpForm({onSignUpClicked, role}: SignUpFormProps) {
                             type={field.type}
                             id={field.id}
                             name={field.id}
-                            required
+                            // required
                             minLength={field.minLength}
-                            aria-required='true'
+                            // aria-required='true'
                             aria-label={field.ariaLabel}
                             className={`h-[40px] !bg-white rounded-md px-[3%] border-[1px] ${errors[field.id as keyof typeof errors] ? 'border-red-600' : 'border-[#a7a7a7]'}`}
                             onChange={handleInputChange}
@@ -177,6 +242,12 @@ function SignUpForm({onSignUpClicked, role}: SignUpFormProps) {
                             value={formData[field.id as keyof typeof formData]}
                         />
                     </div>
+                    {field.id === 'email' && signupError && (
+                    <div className='flex gap-[2px] items-center text-red-600'>
+                        <ErrorIcon className='!text-[18px]' />
+                        <p className='text-[13px]'>{signupError}</p>
+                    </div>
+                    )}
                     {errors[field.id as keyof typeof errors] && <div className='flex gap-[2px] items-center text-red-600'>
                         <ErrorIcon className='!text-[18px]'/>
                         <p className='text-[13px]'>{errors[field.id as keyof typeof errors]}</p>
@@ -185,11 +256,7 @@ function SignUpForm({onSignUpClicked, role}: SignUpFormProps) {
                 ))}
             </div>
             <button
-                disabled={!isFormValid()}
-                className={`${
-                    !isFormValid() ? 'cursor-not-allowed' : 'cursor-pointer'
-                } bg-[#2e294e] md:w-[18vw] sm:w-[50vw] xs:w-[70vw] py-[10px] lg:ml-[3.5vw] md:ml-[6vw] font-semibold text-white rounded-full shadow-md hover:shadow-lg hover:bg-[#5e578a] transition-all duration-300`}
-            >
+                className="bg-[#2e294e] md:w-[18vw] sm:w-[50vw] xs:w-[70vw] py-[10px] lg:ml-[3.5vw] md:ml-[6vw] font-semibold text-white rounded-full shadow-md hover:shadow-lg hover:bg-[#5e578a] transition-all duration-300">
               Sign Up
             </button>
         </form>

@@ -124,13 +124,20 @@ function TutorSignUpPage() {
     setErrors((prev) => ({ ...prev, bio: value.trim() ? "" : "This field is required" }));
   }
 
-  const isFormValid = () => {
-        const allFieldsValid = formData.qualification && formData.experience && formData.subjects.length > 0 && formData.bio.trim() !== '';
-        return allFieldsValid;
-  }
-
   const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const newErrors = {
+      qualification: formData.qualification ? "" : "This field is required",
+      experience: formData.experience ? "" : "This field is required",
+      subjects: formData.subjects.length > 0 ? "" : "Choose at least one subject",
+      bio: formData.bio.trim() ? "" : "This field is required",
+    };
+
+    setErrors(newErrors);
+
+    const hasErrors = Object.values(newErrors).some(error => error !== "");
+    if (hasErrors) return;
 
     const data = new FormData();
 
@@ -279,7 +286,7 @@ function TutorSignUpPage() {
                                     <p className='text-[13px]'>{errors.bio}</p>
                       </div>}
                     </div>
-                    <button type='submit' disabled={!isFormValid()} className={`${!isFormValid() ? 'cursor-not-allowed' : 'cursor-pointer'} bg-[#2e294e] md:w-[18vw] sm:w-[50vw] xs:w-[70vw] py-[2.5%] md:ml-[20%] sm:ml-[8%] xs:ml-0 font-semibold text-white rounded-full shadow-md hover:shadow-lg hover:bg-[#5e578a] transition-all duration-300`}>Finish</button>
+                    <button type='submit' className="bg-[#2e294e] md:w-[18vw] sm:w-[50vw] xs:w-[70vw] py-[2.5%] md:ml-[20%] sm:ml-[8%] xs:ml-0 font-semibold text-white rounded-full shadow-md hover:shadow-lg hover:bg-[#5e578a] transition-all duration-300">Finish</button>
                 </div>
             </form>
             </>

@@ -48,23 +48,12 @@ export const AppContextProvider = ({ children }: ProviderProps) => {
 
         checkAuthentication();
     }, [])
-    // const [userData, setUserData] = useState(() => {
-    //     const storedUser = localStorage.getItem("userData");
-    //     return storedUser ? JSON.parse(storedUser) : null;
-    // });
-
-    // const storeUserData = (data: any) => {
-    //     setUserData(data);
-    //     setIsLoggedIn(true);
-    //     localStorage.setItem("userData", JSON.stringify(data));
-    // }
-
+    
     const value = {
         backendUrl,
         isLoggedIn, setIsLoggedIn,
         userData, setUserData,
         isLoading
-        // storeUserData,
     }
 
     return (
