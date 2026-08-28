@@ -1,4 +1,3 @@
-import React from 'react'
 import useViewportWidth from '../../hooks/useViewportWidth';
 
 function Features() {
