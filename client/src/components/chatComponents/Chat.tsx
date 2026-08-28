@@ -54,6 +54,7 @@ function Chat({ sessionId , userData, otherUser, isRecorded}: ChatProps) {
   useEffect(() => {
     if (!sessionId || !userData) return;
 
+    // Fetch existing messages from backend when page reloads
     const fetchMessages = async () => {
       try {
         const res = await axios.get(`${backendUrl}/api/session/${sessionId}/messages`, { withCredentials: true });
@@ -65,9 +66,11 @@ function Chat({ sessionId , userData, otherUser, isRecorded}: ChatProps) {
 
     fetchMessages();
 
+    // Only join socket if it's not a recorded session
     if (!isRecorded) {
     socket.emit("join-session", { sessionId, userId: userData._id });
 
+    // Listen for incoming messages
     socket.on("receive-message", (message: Message) => {
       setMessages(prev => [...prev, message]);
       });
@@ -79,23 +82,33 @@ function Chat({ sessionId , userData, otherUser, isRecorded}: ChatProps) {
   }, [sessionId, userData, isRecorded])
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() && !selectedImage) return;
+    if (!newMessage.trim() && !selectedImage) return; // prevent empty messages
 
     let imageUrl = null;
 
+    // Upload image if attached
     if (selectedImage) {
       const formData = new FormData();
       formData.append("image", selectedImage);
 
       try {
-        const res = await axios.post("http://localhost:4000/api/chat/upload-image", formData, { withCredentials: true, headers: { "Content-Type": "multipart/form-data" }});
-        imageUrl = res.data.imageUrl;
+        const res = await axios.post(
+          "http://localhost:4000/api/chat/upload-image", 
+          formData, 
+          { withCredentials: true, headers: { "Content-Type": "multipart/form-data" }});
+        imageUrl = res.data.imageUrl; // get uploaded image URL
       } catch (error) {
         console.error("Image upload failed", error)
       }
     }
 
-    socket.emit("send-message", {sessionId, senderId: userData._id, senderName: `${userData.firstName} ${userData.lastName}`, message: newMessage, image: imageUrl});
+    // Emit message via socket to backend
+    socket.emit("send-message", {
+      sessionId, 
+      senderId: userData._id, 
+      senderName: `${userData.firstName} ${userData.lastName}`, 
+      message: newMessage, 
+      image: imageUrl});
     
     setNewMessage("");
     setSelectedImage(null);
