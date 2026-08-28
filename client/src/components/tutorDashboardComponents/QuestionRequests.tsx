@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react'
 import useViewportWidth from '../../hooks/useViewportWidth';
 import QuestionModal from './QuestionModal';
 import type { QuestionRow } from '../../types';
@@ -11,7 +10,7 @@ interface QuestionRequestPayload {
   subject: string;
   question: string;
   image?: string;
-  timeLeft: number;
+  expiresAt: number;
   student: {
     id: string;
     name: string;
@@ -23,18 +22,21 @@ interface QuestionRequestPayload {
 function QuestionRequests() {
   const { userData } = useAppContext();
     
-  // Store the row currently selected for viewing inside the modal
+  // Store the currently selected question to display in the modal
   const [selectedRow, setSelectedRow] = useState<QuestionRow | null>(null);
+
+  // Store all active question requests received from students
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
+
   const [now, setNow] = useState(Date.now());
   const width = useViewportWidth();
 
   const isMobile = width <= 640;
 
+  // Listen for new question requests and expired requests from socket.
   useEffect(() => {
     const handleQuestionRequest = (data: QuestionRequestPayload) => {
       console.log("Received question request:", data);
-      const timeLeft = Date.now() + 60000;
 
       setQuestions(prev => [
         ...prev,
@@ -47,11 +49,12 @@ function QuestionRequests() {
           student: data.student.name,
           studentId: data.student.id,
           profilePicture: data.student.profilePicture,
-          timeLeft,
+          timeLeft: data.expiresAt,
           button: "Accept"
         }]);
     };
 
+    // Remove expired question from list
     const handleExpiredRequest = (data: { questionId: string }) => {
       setQuestions(prev => prev.filter(question => question.id !== data.questionId));
     }
@@ -65,6 +68,7 @@ function QuestionRequests() {
     };
   }, [])
 
+  // Update current time every second to refresh countdown timer.
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(Date.now());
@@ -73,10 +77,12 @@ function QuestionRequests() {
     return () => clearInterval(interval);
   }, [])
 
+  // Automatically remove questions when timer expires.
   useEffect(() => {
     setQuestions(prev => prev.filter(question => question.timeLeft > now))
   }, [now]);
 
+  // Calculate remaining seconds for each question request.
   const getTimeLeft = (timeLeft: number) => {
     const seconds = Math.max(0, Math.floor((timeLeft - now) / 1000));
     return seconds;
