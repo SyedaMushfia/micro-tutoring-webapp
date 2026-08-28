@@ -13,10 +13,13 @@ function TutorSignUpPage() {
   const navigate = useNavigate();
   const { backendUrl, setUserData } = useAppContext()
 
+  // Control which step of the signup process is displayed
   const [signUpClicked, setSignUpClicked] = useState(false);
   const [nextClicked, setNextClicked] = useState(false);
+
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [previewImg, setPreviewImg] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     qualification: '',
     experience: '',
@@ -30,6 +33,8 @@ function TutorSignUpPage() {
     subjects: "",
     bio: "",
   });
+
+  // Dropdown options for tutor profile fields
 
   const qualificationOptions = [
     {value: "Diploma", label: "Diploma"},
@@ -124,6 +129,7 @@ function TutorSignUpPage() {
     setErrors((prev) => ({ ...prev, bio: value.trim() ? "" : "This field is required" }));
   }
 
+  // Validate form and submits tutor profile data to backend
   const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
 

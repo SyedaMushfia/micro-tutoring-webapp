@@ -110,29 +110,29 @@ function StudentSignUpPage() {
 
     const hasErrors = Object.values(newErrors).some(error => error !== "");
     if (hasErrors) return;
-
+  
+    // Create FormData object to include text fields and optional file
     const data = new FormData();
-
     data.append("grade", formData.grade);
     data.append("curriculum", formData.curriculum);
     data.append("institutionOrSchool", formData.institutionOrSchool);
     data.append("gender", formData.gender)
-
     if (profilePicture !== null) {
       data.append("profilePicture", profilePicture);
     }
     
     try {
-    const res = await axios.post(
-      `${backendUrl}/api/auth/setup-profile`,
-      data,
-      { withCredentials: true, headers: {"Content-Type": "multipart/form-data"}, }
-    );
+      // Send POST request to backend profile setup endpoint
+      const res = await axios.post(
+        `${backendUrl}/api/auth/setup-profile`,
+        data,
+        { withCredentials: true, headers: {"Content-Type": "multipart/form-data"}, }
+      );
 
-    if (res.data.success) {
-      setUserData(res.data.user)
-      navigate("/studentDashboard");
-    }
+      if (res.data.success) {
+        setUserData(res.data.user)
+        navigate("/studentDashboard");
+      }
 
   } catch (error) {
     console.log(error);
