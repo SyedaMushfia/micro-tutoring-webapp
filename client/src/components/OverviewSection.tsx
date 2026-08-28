@@ -1,4 +1,4 @@
-import React from 'react'
+import { useEffect, useState } from 'react'
 import PaidIcon from '@mui/icons-material/Paid';
 import StarIcon from '@mui/icons-material/Star';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
@@ -6,6 +6,9 @@ import InfoIcon from '@mui/icons-material/Info';
 import type { Role } from '../types';
 import QuizIcon from '@mui/icons-material/Quiz';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
+import { socket } from '../utils';
+import axios from 'axios';
+import { useAppContext } from '../context/AppContext';
 
 interface OverviewSectionProps {
   role: Role;
@@ -15,6 +18,69 @@ interface OverviewSectionProps {
 }
 
 function OverviewSection({ role, earnings, spendings, questionsCount }: OverviewSectionProps) {
+  const [rating, setRating] = useState(0);
+  const [studyMinutes, setStudyMinutes] = useState(0);
+  const { backendUrl, userData } = useAppContext();
+
+  useEffect(() => {
+    if (role !== "student" || !userData?._id) return;
+
+    const fetchStudyTime = async () => {
+      try {
+        const response = await axios.get(`${backendUrl}/api/session/student/${userData._id}/history`, { withCredentials: true });
+        const completedSessions = response.data.filter((session: { status: string }) => session.status === "Completed").length;
+        setStudyMinutes(completedSessions * 20);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchStudyTime();
+
+    const handleSessionEnded = () => {
+      setStudyMinutes((current) => current + 20);
+    };
+    socket.on("session-ended", handleSessionEnded);
+
+    return () => {
+      socket.off("session-ended", handleSessionEnded);
+    };
+  }, [backendUrl, role, userData?._id]);
+
+  const formatStudyTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (hours === 0) return `${remainingMinutes} mins`;
+    if (remainingMinutes === 0) return `${hours} hr${hours === 1 ? "" : "s"}`;
+    return `${hours} hr${hours === 1 ? "" : "s"} ${remainingMinutes} mins`;
+  };
+
+  useEffect(() => {
+    if (role !== "tutor") return;
+
+    const fetchRating = async () => {
+      try {
+        const profile = await axios.get("http://localhost:4000/api/auth/profile", { withCredentials: true });
+        const tutorId = profile.data.user?._id;
+        if (!tutorId) return;
+
+        const response = await axios.get(`http://localhost:4000/api/reviews/tutor/${tutorId}`, { withCredentials: true });
+        if (response.data.success) setRating(response.data.average);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchRating();
+    const handleRatingSubmitted = (data: { tutorId: string; average: number }) => {
+      setRating((current) => data.average ?? current);
+    };
+    socket.on("rating-submitted", handleRatingSubmitted);
+    return () => {
+      socket.off("rating-submitted", handleRatingSubmitted);
+    };
+  }, [role]);
+
   const tutorCards = [
     {
       name: 'Earnings',
@@ -23,7 +89,7 @@ function OverviewSection({ role, earnings, spendings, questionsCount }: Overview
     },
     {
       name: 'Ratings',
-      value: '4.5',
+      value: rating ? rating.toFixed(1) : '0.0',
       icon: StarIcon
     },
     {
@@ -41,7 +107,7 @@ function OverviewSection({ role, earnings, spendings, questionsCount }: Overview
     },
     {
       name: 'Study Hours',
-      value: '20 mins',
+      value: formatStudyTime(studyMinutes),
       icon: AccessTimeFilledIcon
     },
     {
