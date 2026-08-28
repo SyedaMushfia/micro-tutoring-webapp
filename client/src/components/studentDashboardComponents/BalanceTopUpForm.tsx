@@ -11,6 +11,8 @@ function BalanceTopUpForm() {
   const { getCardNumberProps, getExpiryDateProps, getCVCProps } = usePaymentInputs();
   const { userData, backendUrl, setUserData } = useAppContext();
   const [saveCard, setSaveCard] = useState(false);
+
+  // Check if user already has a saved card
   const savedCard = userData?.student?.savedCard;
   const hasSavedCard = Boolean(savedCard);
 
@@ -42,6 +44,7 @@ function BalanceTopUpForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
+    // Validate card details if no saved card exists
     if (!hasSavedCard) {
         if (!formData.cardName || !formData.cardNumber || !formData.expiry || !formData.cvc ) {
             setError("Please enter valid card details.");
@@ -76,6 +79,7 @@ function BalanceTopUpForm() {
 
         const response = await axios.post(`${backendUrl}/api/recharge/top-up`, payload, {withCredentials: true});
 
+        // If recharge successful, update global balance
         if (response.data.success) {
             const updatedBalance = response.data.newBalance;
 
@@ -92,6 +96,7 @@ function BalanceTopUpForm() {
                 }
             }));
 
+            setError("");
             setFormData({ cardName: "", cardNumber: "", expiry: "", cvc: "", amount: "" });
         } else {
             setError(response.data?.message);
@@ -117,6 +122,8 @@ function BalanceTopUpForm() {
             )}
         </div>
         <form className="space-y-4 mt-8 flex flex-col items-center" onSubmit={handleSubmit}>
+
+        {/* If user has saved card, show card preview and only ask amount */}
         {userData?.student?.savedCard ? (
         <div className='flex flex-col items-center'>
         <div>
@@ -151,6 +158,7 @@ function BalanceTopUpForm() {
         </div>
         ) : (   
             <>
+            {/* Card input fields if no saved card */}
             <div>
             <input
               type="text"
@@ -208,7 +216,11 @@ function BalanceTopUpForm() {
                     type="checkbox"
                     id="saveCard"
                     checked={saveCard}
-                    onChange={() => setSaveCard(prev => !prev)}
+                    onChange={(e) => {
+                        const checked = e.target.checked;
+                        setSaveCard(checked);
+                        if (checked) setError("");
+                    }}
                     className="mr-2"
                 />
                 <label htmlFor="saveCard" className="text-sm text-[#555]">
