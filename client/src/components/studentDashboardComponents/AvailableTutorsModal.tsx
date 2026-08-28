@@ -39,24 +39,28 @@ function AvailableTutorsModal({onShowModal, subject, questionData} : AvailableTu
   const [timer, setTimer] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
   const [requestedTutorId, setRequestedTutorId] = useState<string | null>(null);
+  const [requestPending, setRequestPending] = useState(false);
   const [requestExpiryMsg, setRequestExpiryMsg] = useState<string | null>(null);
 
+  // Fetch online tutors from backend based on selected subject
   const fetchOnlineTutors = async () => {
     const res = await axios.get(`http://localhost:4000/api/user/online-tutors?subject=${subject}`, { withCredentials: true });
     console.log("API response:", res.data);
-    setOnlineTutors(res.data);
+    setOnlineTutors(res.data); // update state with available tutors
   }
 
+  // Fetch tutors on component mount and listen for tutor status updates
   useEffect(() => {
     fetchOnlineTutors();
-
-    socket.on("tutor-status-updated", fetchOnlineTutors);
+    
+    socket.on("tutor-status-updated", fetchOnlineTutors); // update tutor list when any tutor comes online/offline
 
     return () => {
       socket.off("tutor-status-updated");
     }
   }, [subject])
 
+  // Update 'now' every second to enable countdown timer
   useEffect(() => {
     if (!timer) return;
     
@@ -76,28 +80,45 @@ function AvailableTutorsModal({onShowModal, subject, questionData} : AvailableTu
 
   const timeLeft = getTimeLeft();
 
+  // Listen for expired requests and update the UI
   useEffect(() => {
+    const handleRequestSent = (data: { tutorId: string; expiresAt: number }) => {
+      setRequestedTutorId(data.tutorId);
+      setTimer(data.expiresAt);
+      setRequestPending(false);
+      setNow(Date.now());
+    };
+
     const handleExpiredRequest = (data: {tutorId: string, questionId: string}) => {
+        setOnlineTutors(prev => prev.filter(tutor => tutor._id !== data.tutorId)); // Remove the expired tutor from the list
 
-        setOnlineTutors(prev => prev.filter(tutor => tutor._id !== data.tutorId));
-
+        // Reset request and timer states
         setRequestedTutorId(null);
         setTimer(null);
+        setRequestPending(false);
         setNow(Date.now());
 
         setRequestExpiryMsg("Request expired. Please choose another tutor.");
     };
 
+    socket.on("question-request-sent", handleRequestSent);
     socket.on("request-expired", handleExpiredRequest);
 
     return () => {
+      socket.off("question-request-sent", handleRequestSent);
       socket.off("request-expired", handleExpiredRequest)
     }
   }, [])
 
+  // Handle sending a request to a tutor
   const handleRequest = (tutor: Tutor) => {
     setRequestExpiryMsg(null);
+    setRequestPending(true);
+    setRequestedTutorId(tutor._id);
+    setTimer(Date.now() + 60000);
+    setNow(Date.now());
 
+    // Emit socket event with question and student details
     socket.emit("send-question-request", {
       tutorId: tutor._id,
       questionId: questionData._id,
@@ -112,8 +133,6 @@ function AvailableTutorsModal({onShowModal, subject, questionData} : AvailableTu
       }
     })
 
-    setRequestedTutorId(tutor._id);
-    setTimer(Date.now() + 60000);
   }
 
   return (
@@ -146,7 +165,9 @@ function AvailableTutorsModal({onShowModal, subject, questionData} : AvailableTu
                       ))}</ul>
                       <p className='text-[#555]'>4.5⭐</p>
                       </div>
-                      {requestedTutorId === tutor._id  && timeLeft !== null? (
+                      {requestPending && requestedTutorId === tutor._id ? (
+                        <button disabled className='cursor-not-allowed bg-[#2e294e] ml-auto sm:px-8 xs:px-4 py-4 rounded-full text-white'>Requesting...</button>
+                      ) : requestedTutorId === tutor._id && timeLeft !== null ? (
                         timeLeft > 0 ? (
                         <button disabled className='cursor-not-allowed bg-[#2e294e] hover:bg-[#675cae] ml-auto sm:px-8 xs:px-4 py-4 rounded-full text-white'>{timeLeft}</button>
                       ) : null
