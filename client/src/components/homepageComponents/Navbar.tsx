@@ -14,10 +14,14 @@ function Navbar() {
 
   const handleLogout = async () => {
     try {
+      // Send logout request to backend
       await axios.post(`${backendUrl}/api/auth/logout`, {}, { withCredentials: true });
 
+      // Clear login state and user data in context
       setIsLoggedIn(false);
       setUserData(null);
+      
+      // Remove user data from local storage
       localStorage.removeItem("userData");
 
       navigate("/");
