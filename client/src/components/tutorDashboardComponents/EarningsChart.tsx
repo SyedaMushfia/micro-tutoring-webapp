@@ -1,6 +1,33 @@
 import { LineChart } from '@mui/x-charts/LineChart';
 
-function EarningsChart() {
+interface Earning {
+  amount: number;
+  createdAt: string;
+}
+
+interface EarningsChartProps {
+  earnings: Earning[];
+}
+
+function EarningsChart({ earnings }: EarningsChartProps) {
+  const today = new Date();
+  const weekStart = new Date(today);
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(today.getDate() - 6);
+
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(weekStart);
+    day.setDate(weekStart.getDate() + index);
+    return day;
+  });
+
+  const weeklyTotals = days.map((day) => earnings
+    .filter((earning) => {
+      const createdAt = new Date(earning.createdAt);
+      return createdAt.toDateString() === day.toDateString();
+    })
+    .reduce((total, earning) => total + earning.amount, 0));
+
   return (
     <div className="bg-[#f2f4fc] shadow-lg rounded-2xl p-6 mt-4 w-full">
       <h2 className="text-[#2e294e] font-semibold text-lg mb-4">
@@ -11,7 +38,7 @@ function EarningsChart() {
         height={218}
         xAxis={[
           {
-            data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            data: days.map((day) => day.toLocaleDateString('en-US', { weekday: 'short' })),
             scaleType: 'point',
             label: 'Days',
             labelStyle: {
@@ -26,7 +53,7 @@ function EarningsChart() {
         ]}
         series={[
           {
-            data: [0, 0, 0, 0, 250],
+            data: weeklyTotals,
             label: 'Earnings (LKR)',
             color: '#2e294e',
             curve: 'monotoneX',
