@@ -3,6 +3,7 @@ import mongoose, { Document, Model } from "mongoose";
 const whiteboardSchema = new mongoose.Schema(
   {
     elements: { type: [Object], default: [] },
+    files: { type: Object, default: {} },
     participants: { type: [mongoose.Schema.Types.ObjectId], ref: "User", default: []},
     updatedAt: { type: Date, default: () => new Date()},
   },
@@ -22,6 +23,7 @@ interface Session extends Document {
   endedAt?: Date;
   whiteboard?: {
     elements: any[];
+    files: Record<string, any>;
     participants: mongoose.Types.ObjectId[];
     updatedAt: Date;
   }
