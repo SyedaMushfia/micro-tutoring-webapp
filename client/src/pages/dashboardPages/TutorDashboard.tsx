@@ -24,11 +24,14 @@ function TutorDashboard() {
   const navigate  = useNavigate()
   const width = useViewportWidth();
   const { backendUrl, userData, isLoading } = useAppContext()
+
+  // State to track whether tutor is currently online
   const [isOnline, setIsOnline] = useState(userData?.isOnline || false);
 
   const isTab = width <= 769;
   const isMobile = width <= 425;
 
+  // Register tutor with socket server and set tutor as online
   useEffect(() => {
     if (!userData?._id) return;
 
@@ -37,6 +40,7 @@ function TutorDashboard() {
 
   }, [userData?._id])
 
+  // Listen for online status updates from server
   useEffect(() => {
   socket.on("tutor-status-updated", ({ userId, isOnline }) => {
     if (userId === userData?._id) setIsOnline(isOnline);
