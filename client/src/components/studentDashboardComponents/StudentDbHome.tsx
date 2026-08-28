@@ -9,13 +9,17 @@ function StudentDbHome() {
   const [totalSpent, setTotalSpent] = useState(0);
   const [questionsCount, setQuestionsCount] = useState(0);
 
+  // Fetch total spending of student
   useEffect(() => {
     const fetchSpendings = async () => {
       try {
+        
+        // Call backend to get session history
         const res = await axios.get(`${backendUrl}/api/session/student/${userData?._id}/history`, { withCredentials: true });
 
         let total = 0
 
+        // Add up amountPaid from each session
         res.data.forEach((session: any) => {
           total += session.amountPaid;
         }
@@ -27,10 +31,12 @@ function StudentDbHome() {
       }
     };
 
+    // Only fetch if userData is available
     if (userData?._id) fetchSpendings();
   }, [backendUrl, userData]);
 
 
+  // Fetch total number of questions asked by student
   useEffect(() => {
     const fetchSessionCount = async () => {
       try {

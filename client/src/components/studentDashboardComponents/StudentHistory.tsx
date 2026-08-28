@@ -16,6 +16,7 @@ function StudentHistory() {
   const { backendUrl, userData } = useAppContext();
   const navigate = useNavigate();
 
+  // Fetch student session history from backend
   useEffect(() => {
     const fetchHistory = async () => {
       try {
