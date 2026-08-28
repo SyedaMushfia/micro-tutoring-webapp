@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react'
-import MailIcon from '@mui/icons-material/Mail';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import { NavLink, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom';
 import Chat from '../components/chatComponents/Chat';
 import Whiteboard from '../components/chatComponents/Whiteboard';
 import useViewportWidth from '../hooks/useViewportWidth';
 import { useAppContext } from '../context/AppContext';
 import axios from 'axios';
 import { socket } from '../utils';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 
 interface SessionEndedPayload {
   studentAmountDeducted: number;
@@ -16,20 +16,45 @@ interface SessionEndedPayload {
 
 function ChatPage() {
   const { userData } = useAppContext()
+  const width = useViewportWidth();
+  const isTab = width <= 769;
+
+  // UI state for mobile view (switch between chat and whiteboard)
   const [isChatClicked, setIsChatClicked] = useState(true);
   const [isWhiteboardClicked, setIsWhiteboardClicked] = useState(false);
-  const width = useViewportWidth();
+  
+  // Get sessionId from URL
   const { sessionId } = useParams<{ sessionId: string }>();
   const [otherUser, setOtherUser] = useState<{ name: string; profilePicture: string; online: boolean } | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [isRecorded, setIsRecorded] = useState(false);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const [tutorId, setTutorId] = useState<string | null>(null);
+  const [rating, setRating] = useState(0);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const navigate = useNavigate();
 
+  // Prevent user from leaving the page during an active session. Show warning modal if back button is pressed.
+  useEffect(() => {
+    if (isRecorded) return; 
 
-  const isTab = width <= 769;
+    const handleBackButton = (event: PopStateEvent) => {
+      event.preventDefault();
+      window.history.pushState(null, "", window.location.href);
+      setModalMessage("You are in an active session. Please end the session before leaving.");
+      setShowModal(true);
+    };
 
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handleBackButton);
+
+    return () => {
+      window.removeEventListener("popstate", handleBackButton);
+    };
+  }, [isRecorded]);
+
+  // Fetch session details from backend. 
   useEffect(() => {
     if (!sessionId || !userData?._id) return;
 
@@ -38,16 +63,17 @@ function ChatPage() {
         console.log("Session data:", res.data);
         const session = res.data;
         if (!session) return;
+        setTutorId(session.tutor?._id ?? null);
 
+        // If session is not active, mark as recorded
         setIsRecorded(session.status !== "Active");
 
-        const start = new Date(session.startedAt).getTime();
-        const now = Date.now();
-        const elapsed = Math.floor((now - start) / 1000);
-        const total = session.duration;
+        if (session.startedAt && session.status === "Active") {
+          const sessionEnd = new Date(session.startedAt).getTime() + 20 * 60 * 1000;
+          setRemainingTime(Math.max(0, Math.ceil((sessionEnd - Date.now()) / 1000)));
+        }
 
-        setRemainingTime(Math.max(total - elapsed, 0));
-
+        // Identify the other user (student or tutor)
         const otherParticipant = session.tutor._id === userData._id ? session.student : session.tutor;
 
         setOtherUser({
@@ -59,6 +85,7 @@ function ChatPage() {
       .catch (error => console.error(error));
   }, [sessionId, userData])
 
+  // Listen for session-ended event from server. Show wallet deduction/credit message.
   useEffect(() => {
     if (!userData) return;
 
@@ -70,6 +97,7 @@ function ChatPage() {
       }
 
       setShowModal(true);
+      setIsRecorded(true);
     };
 
     socket.on("session-ended", handleSessionEnded);
@@ -79,17 +107,24 @@ function ChatPage() {
     };
   }, [userData]);
 
+  // Listen for real-time session timer updates. End session automatically when time reaches zero.
   useEffect(() => {
-    if (remainingTime === null || isRecorded) return;
+    if (!sessionId) return;
 
-    if (remainingTime <= 0) return;
+    const handleSessionTick = (data: { remainingTime: number }) => {
+      setRemainingTime(data.remainingTime);
 
-    const interval = setInterval(() => {
-      setRemainingTime(prev => (prev !== null ? prev - 1 : null));
-    }, 1000);
+      if (data.remainingTime <= 0) {
+        setIsRecorded(true);
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, [remainingTime, isRecorded]);
+    socket.on("session-tick", handleSessionTick);
+
+    return () => {
+      socket.off("session-tick", handleSessionTick);
+    };
+  }, [sessionId]);
 
 
   const handleClickChat = () => {
@@ -102,6 +137,7 @@ function ChatPage() {
     setIsChatClicked(false);
   }
 
+  // Close modal and redirect user to dashboard after session ends.
   const handleShowModal = () => {
     setShowModal(false);
 
@@ -109,6 +145,29 @@ function ChatPage() {
       navigate("/studentDashboard");
     } else {
       navigate("/tutorDashboard");
+    }
+  };
+
+  const handleSubmitRating = async () => {
+    if (!sessionId || !tutorId || !rating) return;
+
+    try {
+      const response = await axios.post("http://localhost:4000/api/reviews", {
+        sessionId,
+        rating,
+      }, { withCredentials: true });
+
+      if (response.data.success) {
+        setRatingSubmitted(true);
+        socket.emit("rating-submitted", {
+          tutorId,
+          average: response.data.summary.average,
+          count: response.data.summary.count,
+        });
+        navigate("/studentDashboard");
+      }
+    } catch (error: any) {
+      setModalMessage(error.response?.data?.message ?? "Failed to submit rating");
     }
   };
 
@@ -161,13 +220,34 @@ function ChatPage() {
     {showModal && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white p-6 rounded-xl shadow-lg text-center w-[90%] max-w-md">
-          <p className="mb-6 text-[#2e294e]">{modalMessage}</p>
-          <button
-            onClick={handleShowModal}
-            className="bg-[#2e294e] text-white px-6 py-2 rounded-lg"
-          >
-            OK
-          </button>
+          <p className="mb-4 text-[#2e294e] font-bold">{modalMessage}</p>
+          {userData.role === "student" && !ratingSubmitted && (
+            <>
+              <p className="text-[#2e294e] mb-2">Rate your tutor</p>
+              <div className="flex justify-center mb-5" aria-label="Tutor rating">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button key={value} type="button" onClick={() => setRating(value)} aria-label={`${value} stars`}>
+                    {value <= rating ? <StarIcon className="!text-4xl text-[#f5b700]" /> : <StarBorderIcon className="!text-4xl text-[#f5b700]" />}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={handleSubmitRating}
+                disabled={!rating}
+                className="bg-[#2e294e] text-white px-6 py-2 rounded-lg mr-2 disabled:opacity-50"
+              >
+                Submit Rating
+              </button>
+            </>
+          )}
+          {userData.role !== "student" && (
+            <button
+              onClick={handleShowModal}
+              className="bg-[#2e294e] text-white px-6 py-2 rounded-lg"
+            >
+              OK
+            </button>
+          )}
         </div>
       </div>
     )}
