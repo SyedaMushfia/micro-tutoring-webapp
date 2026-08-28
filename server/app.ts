@@ -13,6 +13,7 @@ import sessionRouter from './src/routes/sessionRoutes'
 import chatRouter from './src/routes/chatRoutes'
 import rechargeRouter from './src/routes/rechargeRoutes'
 import earningRouter from "./src/routes/earningRoutes";
+import reviewRouter from "./src/routes/reviewRoutes";
 import http from "http";
 import { Server } from "socket.io";
 import { setupSocket } from "./src/socket";
@@ -53,6 +54,7 @@ app.use('/api/session', sessionRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/recharge", rechargeRouter);
 app.use("/api/earnings", earningRouter);
+app.use("/api/reviews", reviewRouter);
 
 // Start server
 server.listen(port, () => console.log(`Server running on port ${port}`));
