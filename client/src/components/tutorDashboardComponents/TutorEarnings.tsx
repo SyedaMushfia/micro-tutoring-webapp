@@ -1,14 +1,71 @@
-import React from 'react'
+import { useEffect, useState } from 'react'
 import EarningsHistory from './EarningsHistory'
 import EarningsChart from './EarningsChart'
 import useViewportWidth from '../../hooks/useViewportWidth';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useAppContext } from '../../context/AppContext';
+import { socket } from '../../utils';
+import axios from 'axios';
+
+interface Earning {
+  amount: number;
+  createdAt: string;
+}
 
 function TutorEarnings() {
-  const { userData } = useAppContext();
+  const { backendUrl, userData } = useAppContext();
+  const [earnings, setEarnings] = useState<Earning[]>([]);
   const width = useViewportWidth();
   const isTab = width <= 769;
+
+  useEffect(() => {
+    const fetchEarnings = async () => {
+      try {
+        const res = await axios.get(`${backendUrl}/api/earnings/history`, { withCredentials: true });
+        if (res.data.success) setEarnings(res.data.history);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchEarnings();
+
+    const handleSessionEnded = ({ tutorAmountCredited }: { tutorAmountCredited: number }) => {
+      setEarnings((previous) => [
+        { amount: tutorAmountCredited, createdAt: new Date().toISOString() },
+        ...previous,
+      ]);
+    };
+
+    socket.on("session-ended", handleSessionEnded);
+    return () => {
+      socket.off("session-ended", handleSessionEnded);
+    };
+  }, [backendUrl]);
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
+  const currentMonthTotal = earnings
+    .filter((earning) => {
+      const date = new Date(earning.createdAt);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    })
+    .reduce((total, earning) => total + earning.amount, 0);
+  const previousMonthTotal = earnings
+    .filter((earning) => {
+      const date = new Date(earning.createdAt);
+      return date.getMonth() === previousMonthDate.getMonth() && date.getFullYear() === previousMonthDate.getFullYear();
+    })
+    .reduce((total, earning) => total + earning.amount, 0);
+  const monthlyChange = previousMonthTotal === 0
+    ? (currentMonthTotal > 0 ? 100 : 0)
+    : Math.round(((currentMonthTotal - previousMonthTotal) / previousMonthTotal) * 100);
+  const isTrendingUp = monthlyChange >= 0;
+  const TrendIcon = isTrendingUp ? TrendingUpIcon : TrendingDownIcon;
+  const trendText = `${monthlyChange >= 0 ? '+' : ''}${monthlyChange}% from last month`;
 
   return (
     <div>
@@ -24,10 +81,10 @@ function TutorEarnings() {
                     <img src="/credit-card.png" alt="credit card icon" />
                   </div>
                   </div>
-                    <h3 className='w-full px-16 py-2 mt-4 text-[#2e294e] text-center bg-[#c5d86d] rounded-full'>{`You can ask up to questions with your current balance.`}</h3>
+                      <h3 className={`w-full px-16 py-2 mt-4 text-[#2e294e] text-center rounded-full ${isTrendingUp ? 'bg-[#c5d86d]' : 'bg-red-200'}`}><TrendIcon />{trendText}</h3>
               </div>
               <EarningsHistory />
-              <EarningsChart />
+                    <EarningsChart earnings={earnings} />
             </div>) : (
             <div className='flex justify-between'>
             <div>
@@ -41,9 +98,9 @@ function TutorEarnings() {
                     <img src="/credit-card.png" alt="credit card icon" />
                   </div>
                   </div>
-                    <h3 className='w-full px-16 py-2 mt-4 text-[#2e294e] text-center bg-[#c5d86d] rounded-full'><TrendingUpIcon />{`+35% from last month`}</h3>
+                      <h3 className={`w-full px-16 py-2 mt-4 text-[#2e294e] text-center rounded-full ${isTrendingUp ? 'bg-[#c5d86d]' : 'bg-red-200'}`}><TrendIcon />{trendText}</h3>
               </div>
-              <EarningsChart />
+                    <EarningsChart earnings={earnings} />
             </div>
             <EarningsHistory />
             </div>
