@@ -10,6 +10,7 @@ export const getTutorEarningsHistory = async (req: Request, res: Response) => {
       return res.json({ success: false, message: "Unauthorized" });
     }
 
+    // Fetch all earnings records for the tutor, newest first
     const history = await earningModel
       .find({ tutorId: new mongoose.Types.ObjectId(tutorId) })
       .sort({ createdAt: -1 })

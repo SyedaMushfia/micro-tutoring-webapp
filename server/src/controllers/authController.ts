@@ -11,8 +11,10 @@ if (!JWT_SECRET) {
 
 export const registerUser = async (req: Request, res: Response) => {
     
+    // Extract user details
     const { firstName, lastName, email, password, role } = req.body;
 
+    // Input fields validation
     if (!firstName || !lastName || !email || !password || !role) {
         return res.json({success: false, message: 'Missing Details'})
     }
@@ -25,7 +27,7 @@ export const registerUser = async (req: Request, res: Response) => {
         return res.json({ success: false, message: 'Enter a valid email' });
     }
 
-    if (!validator.isStrongPassword(password, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1 })) {
+    if (!validator.isStrongPassword(password, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 0 })) {
         return res.json({ 
             success: false, 
             message: 'Password must have 8 chars, uppercase, lowercase, & number.' 
@@ -33,20 +35,24 @@ export const registerUser = async (req: Request, res: Response) => {
     }
 
     try {
+        // Check if the user already exists
         const existingUser = await userModel.findOne({email});
-
         if (existingUser) {
             return res.json({ success: false, message: "User already exists"});
         }
 
+        // Hash password before storing in db
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Create new user document
         const user = new userModel({firstName, lastName, email, password: hashedPassword, role, isOnline: false});
 
         await user.save();
 
+        // Generate JWT token
         const token = jwt.sign({id: user._id}, JWT_SECRET, { expiresIn: '7d'})
 
+        // Store JWT in HTTP-only cookie to preserve authentication state
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -54,6 +60,7 @@ export const registerUser = async (req: Request, res: Response) => {
             maxAge: 7 * 24 * 60 * 60 * 1000
         })
 
+        // Mark user as online after successful registration
         user.isOnline = true;
         await user.save();
 
@@ -67,25 +74,29 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
     const {email, password} = req.body;
 
+    // Validate required fields
     if (!email || !password) {
         return res.json({success: false, message: 'Email and password are required'})
     }   
 
     try {
+        // Find user by email
         const user = await userModel.findOne({email});
 
         if (!user) {
             return res.json({success: false, message: 'Invalid email or password.'})
         }
 
+        // Compare entered password with hashed password
         const passwordMatch = await bcrypt.compare(password, user.password);
-
         if (!passwordMatch) {
             return res.json({success: false, message: 'Invalid email or password'})
         }
 
+        // Generate JWT token after successful authentication
         const token = jwt.sign({id: user._id}, JWT_SECRET, { expiresIn: '7d'})
 
+        // Store token in HTTP-only cookie
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -107,6 +118,7 @@ export const logoutUser = async (req: Request, res: Response) => {
     try {
         const userId = req.user?._id;
 
+        // Mark user as offline
         if (userId) {
             await userModel.findByIdAndUpdate(userId, { isOnline: false });
         }
@@ -116,7 +128,6 @@ export const logoutUser = async (req: Request, res: Response) => {
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             path: "/"
-            // maxAge: 7 * 24 * 60 * 60 * 1000
         })
 
         return res.json({success: true, message: "Logged out successfully"})
@@ -137,10 +148,11 @@ export const isAuthenticated = (req: Request, res: Response) => {
 export const setupProfile = async (req: Request, res: Response) => {
 
     try {
-
+        // Extract authenticated user from token
         const userID = (req as any).user;
         const role = userID.role;
         
+        // Extract all available profile fields from the request body. Role-specific fields will be saved based on user role
         const { qualification, experience, subjects, bio, grade, curriculum, gender, institutionOrSchool } = req.body;
 
         let profilePicture = undefined;
@@ -149,6 +161,7 @@ export const setupProfile = async (req: Request, res: Response) => {
             profilePicture = (req.file).path;
         }
 
+        // Store tutor-related fields in the tutor sub-document
         if (role === 'tutor') {
             const updatedUser = await userModel.findByIdAndUpdate(
             userID._id, 
@@ -158,7 +171,9 @@ export const setupProfile = async (req: Request, res: Response) => {
             {new: true});
 
             res.json({success: true, message: "Setting up the profile is complete!", user: updatedUser})
-        } else if (role === 'student') {
+        } 
+        // Store student-related fields in the student sub-document
+        else if (role === 'student') {
             const updatedUser = await userModel.findByIdAndUpdate(
             userID._id, 
             {student: 
@@ -176,12 +191,14 @@ export const setupProfile = async (req: Request, res: Response) => {
     }
 };
 
+// Get authenticated user's profile data
 export const getUserProfile = async (req: Request, res: Response) => {
     try {
         if (!req.user || !req.user._id) {
             return res.json({ message: 'Not authorized' });
         }
 
+        // Exclude password field from response
         const user = await userModel.findById(req.user._id).select('-password');
 
         if (!user) {

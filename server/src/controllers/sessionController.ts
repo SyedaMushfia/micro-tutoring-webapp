@@ -75,8 +75,10 @@ export const getStudentSessionHistory = async (req: Request, res: Response) => {
       return res.json({ message: "Student ID is required" });
     }
 
+    // Fetch sessions for the student, sort by newest first, and populate tutor's name
     const sessions = await sessionModel.find({ studentId }).sort({ createdAt: -1 }).populate("tutorId", "firstName lastName").lean();
 
+    // Format sessions for frontend 
     const formattedSessions = sessions.map(session => ({
       sessionId: session.sessionId,
       subject: session.subject,
@@ -88,7 +90,7 @@ export const getStudentSessionHistory = async (req: Request, res: Response) => {
       amountPaid: 250
     }));
 
-    res.json(formattedSessions);
+    res.json(formattedSessions); // Send formatted session history as JSON
   } catch (error) {
     console.error("Student session history error:", error);
     res.json({ message: "Failed to fetch student session history" });
