@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { socket } from "../utils";
 
 interface AppContextType {
   backendUrl: string;
@@ -7,7 +8,6 @@ interface AppContextType {
   userData: any;
   setUserData: (value: any) => void;
   isLoading: boolean
-//   storeUserData: (value: any) => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -22,6 +22,58 @@ export const AppContextProvider = ({ children }: ProviderProps) => {
     const [userData, setUserData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    /*
+      Socket listener for student wallet deduction
+      When a session ends, the backend sends the deducted amount.
+      The student's balance is updated in real-time.
+    */
+    useEffect(() => {
+        socket.on("session-ended", (data: { studentAmountDeducted: number, tutorAmountCredited: number }) => {
+            setUserData((prev: any) => {
+            if (!prev?.student) return prev;
+            return {
+                ...prev,
+                student: {
+                ...prev.student,
+                balance: (prev.student.balance ?? 0) - data.studentAmountDeducted,
+                },
+            };
+            });
+        });
+
+        return () => {
+            socket.off("session-ended");
+        };
+    }, []);
+
+    /*
+      Socket listener for tutor earnings update
+      When a session ends, the tutor's earnings are updated in real-time.
+     */
+    useEffect(() => {
+        socket.on("session-ended", (data: { studentAmountDeducted: number, tutorAmountCredited: number }) => {
+            setUserData((prev: any) => {
+            if (!prev?.tutor) return prev;
+            return {
+                ...prev,
+                tutor: {
+                ...prev.tutor,
+                earnings: prev.tutor.earnings + data.tutorAmountCredited,
+                },
+            };
+            });
+        });
+
+        return () => {
+            socket.off("session-ended");
+        };
+    }, []);
+
+    /*
+      Check if the user is already authenticated when the application loads.
+      Send a request to the backend using cookies.
+      Update login status and user data based on the response.
+     */
     useEffect(() => {
         const checkAuthentication = async () => {
             try {
