@@ -110,7 +110,7 @@ function SignUpForm({onSignUpClicked, role}: SignUpFormProps) {
                 break;
 
             case 'password':
-                if (!validator.isStrongPassword(value, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1}))
+                if (!validator.isStrongPassword(value, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 0 }))
                 errorMessage = 'Password must have 8 chars, uppercase, lowercase, & number.';
                 break;
 
@@ -168,7 +168,7 @@ function SignUpForm({onSignUpClicked, role}: SignUpFormProps) {
                 }
                 break;
             case 'password':
-                if (!validator.isStrongPassword(value, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1})) {
+                if (!validator.isStrongPassword(value, { minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 0 })) {
                     newErrors.password = 'Password must have 8 chars, uppercase, lowercase, & number.';
                     valid = false;
                 } else {
@@ -232,9 +232,7 @@ function SignUpForm({onSignUpClicked, role}: SignUpFormProps) {
                             type={field.type}
                             id={field.id}
                             name={field.id}
-                            // required
                             minLength={field.minLength}
-                            // aria-required='true'
                             aria-label={field.ariaLabel}
                             className={`h-[40px] !bg-white rounded-md px-[3%] border-[1px] ${errors[field.id as keyof typeof errors] ? 'border-red-600' : 'border-[#a7a7a7]'}`}
                             onChange={handleInputChange}
