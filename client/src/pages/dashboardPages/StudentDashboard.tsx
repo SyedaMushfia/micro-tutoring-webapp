@@ -11,8 +11,6 @@ import MailIcon from '@mui/icons-material/Mail';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import MenuIcon from '@mui/icons-material/Menu';
-import OverviewSection from '../../components/OverviewSection';
-import AskQuestion from '../../components/studentDashboardComponents/AskQuestion';
 import CircleIcon from '@mui/icons-material/Circle';
 import useViewportWidth from '../../hooks/useViewportWidth';
 import { useAppContext } from '../../context/AppContext';
@@ -28,8 +26,11 @@ function StudentDashboard() {
   const isMobile = width <= 425;
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // State to track student online status
   const [isOnline, setIsOnline] = useState(userData?.isOnline || false);
 
+  // Register student with socket server when user loads
   useEffect(() => {
       if (!userData?._id) return;
   
@@ -38,6 +39,7 @@ function StudentDashboard() {
   
     }, [userData?._id])
 
+    // Listen for online status updates from server
     useEffect(() => {
     socket.on("student-status-updated", ({ userId, isOnline }) => {
       if (userId === userData?._id) setIsOnline(isOnline);
@@ -48,6 +50,7 @@ function StudentDashboard() {
     }
   }, [userData?._id]);
 
+  // Redirect student to chatroom when tutor accepts question
   useEffect(() => {
     const handleRequestAccepted = ({ sessionId }: { sessionId: string }) => {
       navigate(`/chatroom/${sessionId}`);
