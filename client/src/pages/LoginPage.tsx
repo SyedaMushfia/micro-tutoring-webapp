@@ -74,12 +74,15 @@ function LoginPage() {
         return;
       }
 
+      // Get logged-in user profile
       const getProfileRes = await axios.get(`${backendUrl}/api/auth/profile`, {withCredentials: true});
       setIsLoggedIn(true);
       setUserData(getProfileRes.data.user);
 
+      // Register user in socket for real-time features
       socket.emit("register-user", { userId: getProfileRes.data.user._id });
 
+      // Set user online status and redirect based on role
       if (getProfileRes.data.user.role === "tutor") {
         socket.emit("tutor-online", { userId: getProfileRes.data.user._id });
         navigate("/tutorDashboard");
