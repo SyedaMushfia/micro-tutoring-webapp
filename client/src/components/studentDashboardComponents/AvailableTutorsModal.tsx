@@ -5,6 +5,7 @@ import axios from 'axios';
 import { socket } from '../../utils';
 import { useAppContext } from '../../context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import LazyImage from '../LazyImage';
 
 interface AvailableTutorsModalProps {
   onShowModal: (value: boolean) => void;
@@ -24,6 +25,7 @@ interface Tutor {
   _id: string;
   firstName: string;
   lastName: string;
+  isFavorite?: boolean;
   tutor: {
     subjects: string[];
     bio: string;
@@ -44,9 +46,14 @@ function AvailableTutorsModal({onShowModal, subject, questionData} : AvailableTu
 
   // Fetch online tutors from backend based on selected subject
   const fetchOnlineTutors = async () => {
-    const res = await axios.get(`http://localhost:4000/api/user/online-tutors?subject=${subject}`, { withCredentials: true });
-    console.log("API response:", res.data);
-    setOnlineTutors(res.data); // update state with available tutors
+    const [tutorsRes, favoritesRes] = await Promise.all([
+      axios.get(`http://localhost:4000/api/user/online-tutors?subject=${subject}`, { withCredentials: true }),
+      axios.get(`http://localhost:4000/api/user/favorites`, { withCredentials: true }),
+    ]);
+
+    const favoriteIds = new Set((favoritesRes.data?.favorites || []).map((tutor: any) => tutor._id));
+    const tutors = tutorsRes.data.map((tutor: Tutor) => ({ ...tutor, isFavorite: favoriteIds.has(tutor._id) }));
+    setOnlineTutors(tutors);
   }
 
   // Fetch tutors on component mount and listen for tutor status updates
@@ -153,10 +160,20 @@ function AvailableTutorsModal({onShowModal, subject, questionData} : AvailableTu
                   onlineTutors.map(tutor => (
                     <li key={tutor._id} className='flex justify-start items-center mb-6 bg-[#f2f4fc] shadow-lg h-[125px] sm:w-full xs:w-[100%] py-4 sm:px-[3%] xs:px-[2.5%] rounded-2xl'>
                       <div className='w-[5vw] h-[5vw] my-2 mr-4 rounded-full overflow-hidden'>
-                        <img src={tutor.tutor?.profilePicture} alt={tutor.firstName} className="w-full h-full object-cover"/>
-                        </div>
+                        <LazyImage
+                          src={tutor.tutor?.profilePicture}
+                          alt={`${tutor.firstName} ${tutor.lastName}`}
+                          width={80}
+                          height={80}
+                          className='h-full w-full rounded-full'
+                          placeholderClassName='bg-[#eef1f9]'
+                        />
+                      </div>
                       <div>
-                        <h3 className="font-semibold">{tutor.firstName} {tutor.lastName}</h3>
+                        <div className="mb-1 flex items-center gap-2">
+                          <h3 className="font-semibold">{tutor.firstName} {tutor.lastName}</h3>
+                          {tutor.isFavorite && <span className="rounded-full bg-[#fff1f5] px-2 py-0.5 text-xs font-semibold text-[#d13b63]">Favorite</span>}
+                        </div>
                         <ul className='flex sm:gap-6 xs:gap-2 sm:items-center'>{tutor.tutor?.subjects.map(sub => (
                           <li key={sub} className='!text-sm flex items-center gap-[1px] text-[#555] mb-2'>
                             <CircleIcon className='!text-sm'/>
