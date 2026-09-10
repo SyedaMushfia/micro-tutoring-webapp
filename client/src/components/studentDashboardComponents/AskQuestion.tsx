@@ -4,6 +4,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import AvailableTutorsModal from './AvailableTutorsModal';
 import axios from 'axios';
 import { useAppContext } from '../../context/AppContext';
+import { optimizeImageFile } from '../../utils';
 
 function AskQuestion() {
   const [image, setImage] = useState<File | null>(null);
@@ -42,12 +43,19 @@ function AskQuestion() {
     setError('');
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const img = e.target.files?.[0];
-      if (img) {
-        setImage(img);
-        setPreviewImg(URL.createObjectURL(img));
-      }
+    if (!img) return;
+
+    try {
+      const optimizedImage = await optimizeImageFile(img, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 });
+      setImage(optimizedImage);
+      setPreviewImg(URL.createObjectURL(optimizedImage));
+    } catch (error) {
+      console.error('Question image optimization failed', error);
+      setImage(img);
+      setPreviewImg(URL.createObjectURL(img));
+    }
   }
 
   const questionPrice = 250;
@@ -89,14 +97,13 @@ function AskQuestion() {
   }
 
   return (
-    <div className='md:w-[78.5vw] sm:w-full bg-[#f2f4fc] rounded-2xl px-[3%] min-h-[435px] md:mt-[1%] xs:mt-[2%] py-[1%]'>
+    <div className='md:w-[78.5vw] sm:w-full rounded-2xl px-[3%] min-h-[435px] md:mt-[1%] xs:mt-[2%] py-[1%] bg-[#f2f4fc] text-[#2e294e]'>
         <form>
             <div className='min-h-[350px]'>
                 <div className='flex gap-14'>
-                    {/* Subject Dropdown */}
                     <div className='relative flex flex-col w-[50%]'>
-                        <label htmlFor="subject" className='text-[#555] text-text3 font-medium ml-[1%] mb-[1%]'>Subject</label>
-                        <select name="subject" id="subject" value={questionData.subject} onChange={handleInputChange} className='appearance-none h-[40px] !bg-white rounded-md px-[3%] border-[1px]'>
+                        <label htmlFor="subject" className='text-text3 font-medium ml-[1%] mb-[1%] text-[#555]'>Subject</label>
+                        <select name="subject" id="subject" value={questionData.subject} onChange={handleInputChange} className='appearance-none h-[40px] rounded-md px-[3%] border-[1px] bg-white border-[#d9dded] text-[#2e294e]'>
                             <option value="">Select a subject</option>
                             {subjects.map((subject) => (
                                 <option key={subject} value={subject}>
@@ -108,18 +115,16 @@ function AskQuestion() {
                             <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                         </div>
                     </div>
-                    {/* Topic Field */}
                     <div className='flex flex-col w-[50%]'>
-                        <label htmlFor="topic" className='text-[#555] text-text3 font-medium ml-[1%] mb-[1%]'>Topic</label>
-                        <input type="text" id="topic" name="topic" placeholder="E.g., Algebra" value={questionData.topic} onChange={handleInputChange} className='h-[40px] !bg-white rounded-md px-[3%] border-[1px]'/>
+                        <label htmlFor="topic" className='text-text3 font-medium ml-[1%] mb-[1%] text-[#555]'>Topic</label>
+                        <input type="text" id="topic" name="topic" placeholder="E.g., Algebra" value={questionData.topic} onChange={handleInputChange} className='h-[40px] rounded-md px-[3%] border-[1px] bg-white border-[#d9dded] text-[#2e294e]'/>
                     </div>
                 </div>
-                {/* Question Textarea */}
                 <div className={`${previewImg ? 'xs:flex-col justify-center items-center' : 'xs:flex-row justify-between'} flex sm:flex-row sm:justify-between w-full`}>
                     <div>
-                        <textarea name="question" id="question" placeholder='Type your question here...' value={questionData.question} onChange={handleInputChange} className={`${previewImg ? 'md:w-[58vw] sm:w-[60vw] xs:w-[91vw]' : 'md:w-[74vw] xs:w-[91vw]'} px-4 py-2 my-[1%] h-[250px] appearance-none resize-none rounded-xl border-[1px]`}></textarea>
+                        <textarea name="question" id="question" placeholder='Type your question here...' value={questionData.question} onChange={handleInputChange} className={`${previewImg ? 'md:w-[58vw] sm:w-[60vw] xs:w-[91vw]' : 'md:w-[74vw] xs:w-[91vw]'} px-4 py-2 my-[1%] h-[250px] appearance-none resize-none rounded-xl border-[1px] bg-white border-[#d9dded] text-[#2e294e]`}></textarea>
                     </div>
-                    {previewImg ? <div className='md:w-[20%] xs:w-[40%] h-[250px] rounded-xl border-[1px] sm:my-[0.75%] xs:mt-[1%] xs:mb-[3%]'><img src={previewImg} alt="question image" className='w-full h-full object-cover rounded-xl border-[1px]'/></div> : null}
+                    {previewImg ? <div className='md:w-[20%] xs:w-[40%] h-[250px] rounded-xl border-[1px] sm:my-[0.75%] xs:mt-[1%] xs:mb-[3%] border-[#d9dded] bg-white'><img src={previewImg} alt="question image" className='w-full h-full object-cover rounded-xl border-[1px]'/></div> : null}
                 </div>
                 {error && <div className='flex items-center gap-2 text-[14px] mt-[-1%] text-red-600'>
                         <ErrorIcon className='!text-[18px]'/>
