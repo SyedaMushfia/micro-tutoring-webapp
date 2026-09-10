@@ -7,6 +7,7 @@ import { socket } from '../../utils';
 import axios from 'axios';
 import EmojiPicker from "emoji-picker-react";
 import { useAppContext } from '../../context/AppContext';
+import { getOptimizedCloudinaryUrl, optimizeImageFile } from '../../utils';
 
 interface User {
   _id: string;
@@ -115,12 +116,20 @@ function Chat({ sessionId , userData, otherUser, isRecorded}: ChatProps) {
     setPreviewUrl(null);
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
-    
+
     const file = e.target.files[0];
-    setSelectedImage(file);
-    setPreviewUrl(URL.createObjectURL(file));
+
+    try {
+      const optimizedFile = await optimizeImageFile(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 });
+      setSelectedImage(optimizedFile);
+      setPreviewUrl(URL.createObjectURL(optimizedFile));
+    } catch (error) {
+      console.error('Chat image optimization failed', error);
+      setSelectedImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
   };
 
 
@@ -133,7 +142,7 @@ function Chat({ sessionId , userData, otherUser, isRecorded}: ChatProps) {
       <div className='flex justify-between items-center py-2 lg:px-8 md:px-4 sm:px-8 xs:px-6 bg-white drop-shadow-xl '>
         <div className='flex items-center lg:gap-4 md:gap-2 sm:gap-4 xs:gap-4'>
             <div className="w-[3.25vw] h-[3.25vw] rounded-full overflow-hidden">
-                <img src={otherUser.profilePicture} alt="profile picture" className="w-full h-full object-cover" />
+                <img src={getOptimizedCloudinaryUrl(otherUser.profilePicture, { width: 80, height: 80, crop: 'fill' }) || otherUser.profilePicture} alt="profile picture" className="w-full h-full object-cover" />
             </div>
             <div>
               <p className='text-[#2e294e] md:text-text5'>{otherUser.name}</p>
