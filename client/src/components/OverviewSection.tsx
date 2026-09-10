@@ -48,11 +48,9 @@ function OverviewSection({ role, earnings, spendings, questionsCount }: Overview
   }, [backendUrl, role, userData?._id]);
 
   const formatStudyTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    if (hours === 0) return `${remainingMinutes} mins`;
-    if (remainingMinutes === 0) return `${hours} hr${hours === 1 ? "" : "s"}`;
-    return `${hours} hr${hours === 1 ? "" : "s"} ${remainingMinutes} mins`;
+    const totalHours = Math.round((minutes / 60) * 2) / 2;
+    const displayHours = Number.isInteger(totalHours) ? totalHours.toFixed(0) : totalHours.toFixed(1);
+    return `${displayHours} hr${Number(displayHours) === 1 ? "" : "s"}`;
   };
 
   useEffect(() => {
@@ -123,16 +121,16 @@ function OverviewSection({ role, earnings, spendings, questionsCount }: Overview
   return (
     <div className='sm:flex sm:flex-row sm:justify-between xs:flex xs:flex-col xs:items-center xs:gap-4 sm:my-[1.5%] xs:my-[4%]'>
       {cards.map(card => (
-          <div key={card.name} className='bg-[#f2f4fc] shadow-lg sm:w-[32%] xs:w-[75%] h-[150px] sm:px-[3%] xs:px-[10%] rounded-2xl flex items-center justify-between'>
+          <div key={card.name} className='shadow-lg sm:w-[32%] xs:w-[75%] h-[150px] sm:px-[3%] xs:px-[10%] rounded-2xl flex items-center justify-between bg-[#f2f4fc]'>
             <div className='flex flex-col '>
-              <h1 className='lg:text-[45px] md:text-[35px] sm:text-[30px] xs:text-[40px] font-semibold text-[#2e294e] tracking-wide'>{card.value}</h1>
+              <h1 className='lg:text-[45px] md:text-[35px] sm:text-[30px] xs:text-[40px] font-semibold tracking-wide text-[#2e294e]'>{card.value}</h1>
               <div className='flex items-center sm:gap-[3%] xs:gap-[1%] lg:w-[12vw] md:w-[15vw] sm:w-[22vw] xs:w-[40vw]'>
-                <h3 className='text-[#555] lg:text-[16px] md:text-[14px] sm:text-[14px] xs:text-[16px]'>{card.name}</h3>
-                <InfoIcon className='text-[#aaaaaa] sm:!text-[20px] xs:!text-[15px]'/>
+                <h3 className='lg:text-[16px] md:text-[14px] sm:text-[14px] xs:text-[16px] text-[#555]'>{card.name}</h3>
+                <InfoIcon className='sm:!text-[20px] xs:!text-[15px] text-[#aaaaaa]' />
               </div>
             </div>
             <div className=''>
-              <card.icon className='lg:!text-[80px] md:!text-[60px] sm:!text-[50px] xs:!text-[80px] text-[#c5d86d] md:ml-0 sm:ml-[-20px]'/>
+              <card.icon className='lg:!text-[80px] md:!text-[60px] sm:!text-[50px] xs:!text-[80px] md:ml-0 sm:ml-[-20px] text-[#c5d86d]' />
             </div>
           </div>
       ))}
