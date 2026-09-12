@@ -17,11 +17,11 @@ function StudentWallet() {
     <div>
         {isTab ? (
             <div>
-                <div className=' flex flex-col justify-center bg-[#f2f4fc] shadow-lg w-full h-[200px] sm:px-[8%] xs:px-[10%] py-8 mt-4 rounded-2xl'>
+                <div className=' flex flex-col justify-center shadow-lg w-full h-[200px] sm:px-[8%] xs:px-[10%] py-8 mt-4 rounded-2xl bg-[#f2f4fc]'>
                   <div className=' flex items-start justify-between'>
                     <div>
-                        <h1 className='text-[#555] text-text4 tracking-wide'>Available Balance</h1>
-                        <h2 className='lg:text-[70px] md:text-[45px] sm:text-[50px] xs:text-[40px] font-semibold text-[#2e294e] tracking-wide'><span className="align-super text-2xl">Rs.</span>{userData?.student?.balance ?? 0}</h2>
+                        <h1 className='text-text4 tracking-wide text-[#555]'>Available Balance</h1>
+                        <h2 className='lg:text-[70px] md:text-[45px] sm:text-[50px] xs:text-[40px] font-semibold tracking-wide text-[#2e294e]'><span className="align-super text-2xl">Rs.</span>{userData?.student?.balance ?? 0}</h2>
                     </div>
                   <div className='md:w-[10vw] sm:w-[20vw] xs:w-[15vw]'>
                     <img src="/credit-card.png" alt="credit card icon" />
@@ -34,7 +34,7 @@ function StudentWallet() {
             </div>) : (
             <div className='flex justify-between'>
             <div>
-              <div className=' flex flex-col justify-center bg-[#f2f4fc] shadow-lg w-[42vw] h-[250px] sm:px-[8%] xs:px-[10%] py-8 mt-4 rounded-2xl'>
+              <div className=' flex flex-col justify-center shadow-lg w-[42vw] h-[250px] sm:px-[8%] xs:px-[10%] py-8 mt-4 rounded-2xl bg-[#f2f4fc]'>
                   <div className=' flex items-start justify-between'>
                     <div>
                         <h1 className='text-[#555] text-text4 tracking-wide'>Available Balance</h1>
