@@ -124,10 +124,10 @@ function QuestionRequests() {
   }
 
   return (
-    <div className='bg-[#f2f4fc] rounded-2xl px-[3%] h-[434px] overflow-y-scroll'>
+    <div className='rounded-2xl px-[3%] h-[434px] overflow-y-scroll bg-[#f2f4fc]'>
       {isMobile ? (
         <div>
-          <div className="flex py-4 text-sm font-semibold text-[#adadad] border-b border-gray-200">
+          <div className='flex py-4 text-sm font-semibold border-b text-[#adadad] border-gray-200'>
           {mobileColData.map(col => (
            <div key={col.header} style={{ width: col.width }} className='text-left px-2'>
             {col.header}
@@ -146,8 +146,8 @@ function QuestionRequests() {
           </div> ))}
         </div>
       ) : (<div>
-        <h1 className='text-[20px] text-[#2e294e] font-semibold py-[2%] border-b-[1px] border-b-gray-200'>Student Requests</h1>
-        <div className="flex py-4 text-sm font-semibold text-[#adadad] border-b border-gray-200">
+        <h1 className='text-[20px] font-semibold py-[2%] border-b-[1px] text-[#2e294e] border-gray-200'>Student Requests</h1>
+        <div className='flex py-4 text-sm font-semibold border-b text-[#adadad] border-gray-200'>
           {desktopColData.map(col => (
            <div key={col.header} style={{ width: col.width }} className='text-left px-2'>
             {col.header}
