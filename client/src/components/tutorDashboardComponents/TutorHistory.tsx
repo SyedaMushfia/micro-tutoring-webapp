@@ -38,35 +38,35 @@ function TutorHistory() {
   return (
     <TableContainer
       component={Paper}
-      className="!bg-[#f2f4fc] !md:w-[42vw] h-[600px] !shadow-lg sm:px-[3%] xs:px-[10%] mt-4 !rounded-2xl"
+      className='!md:w-[42vw] h-[600px] !shadow-lg sm:px-[3%] xs:px-[10%] mt-4 !rounded-2xl !bg-[#f2f4fc]'
     >
-      <h1 className="mt-4 mb-6 ml-4 text-text1 text-center font-semibold text-[#2e294e]">
+      <h1 className='mt-4 mb-6 ml-4 text-text1 text-center font-semibold text-[#2e294e]'>
         Session History
       </h1>
 
       <Table aria-label="simple table" className="mt-4 !md:w-[39.25vw]">
         <TableHead>
           <TableRow>
-            <TableCell className="bg-[#2e294e] !text-white font-semibold">Question</TableCell>
-            <TableCell align="right" className="bg-[#2e294e] !text-white font-semibold">Subject</TableCell>
-            <TableCell align="right" className="bg-[#2e294e] !text-white font-semibold">Student</TableCell>
-            <TableCell align="right" className="bg-[#2e294e] !text-white font-semibold">Date</TableCell>
-            <TableCell align="right" className="bg-[#2e294e] !text-white font-semibold">Earnings</TableCell>
-            <TableCell align="right" className="bg-[#2e294e] !text-white font-semibold">Status</TableCell>
-            <TableCell align="right" className="bg-[#2e294e] !text-white font-semibold">Action</TableCell>
+            <TableCell className='bg-[#2e294e] !text-white font-semibold'>Question</TableCell>
+            <TableCell align="right" className='bg-[#2e294e] !text-white font-semibold'>Subject</TableCell>
+            <TableCell align="right" className='bg-[#2e294e] !text-white font-semibold'>Student</TableCell>
+            <TableCell align="right" className='bg-[#2e294e] !text-white font-semibold'>Date</TableCell>
+            <TableCell align="right" className='bg-[#2e294e] !text-white font-semibold'>Earnings</TableCell>
+            <TableCell align="right" className='bg-[#2e294e] !text-white font-semibold'>Status</TableCell>
+            <TableCell align="right" className='bg-[#2e294e] !text-white font-semibold'>Action</TableCell>
           </TableRow>
         </TableHead>
 
         <TableBody>
           {history.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} align="center">
+              <TableCell colSpan={7} align="center" sx={{ color: '#2e294e', borderColor: '#e5e7eb' }}>
                 No sessions yet
               </TableCell>
             </TableRow>
           ) : (
             history.map((row, index) => (
-              <TableRow key={index}>
+              <TableRow key={index} sx={{ '& td': { color: '#2e294e', borderColor: '#e5e7eb' } }}>
                 <TableCell className="max-w-[200px] truncate">{row.question}</TableCell>
                 <TableCell align="right">{row.subject}</TableCell>
                 <TableCell align="right">{row.studentName}</TableCell>
