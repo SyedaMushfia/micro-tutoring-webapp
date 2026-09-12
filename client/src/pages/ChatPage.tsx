@@ -32,6 +32,8 @@ function ChatPage() {
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const [tutorId, setTutorId] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [isFavorite, setIsFavorite] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const navigate = useNavigate();
 
@@ -59,11 +61,22 @@ function ChatPage() {
     if (!sessionId || !userData?._id) return;
 
     axios.get(`http://localhost:4000/api/session/${sessionId}`, {withCredentials: true})
-      .then(res => {
+      .then(async (res) => {
         console.log("Session data:", res.data);
         const session = res.data;
         if (!session) return;
         setTutorId(session.tutor?._id ?? null);
+
+        if (userData?.role === 'student' && session.tutor?._id) {
+          try {
+            const favoriteRes = await axios.get(`${userData ? 'http://localhost:4000' : ''}/api/user/favorites`, { withCredentials: true });
+            const favorites = favoriteRes.data?.favorites || [];
+            const match = favorites.some((tutor: any) => tutor._id === session.tutor._id);
+            setIsFavorite(match);
+          } catch (error) {
+            console.error('Failed to load favorites', error);
+          }
+        }
 
         // If session is not active, mark as recorded
         setIsRecorded(session.status !== "Active");
@@ -155,6 +168,7 @@ function ChatPage() {
       const response = await axios.post("http://localhost:4000/api/reviews", {
         sessionId,
         rating,
+        reviewText,
       }, { withCredentials: true });
 
       if (response.data.success) {
@@ -168,6 +182,19 @@ function ChatPage() {
       }
     } catch (error: any) {
       setModalMessage(error.response?.data?.message ?? "Failed to submit rating");
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!tutorId) return;
+
+    try {
+      const response = await axios.post(`http://localhost:4000/api/user/favorites/${tutorId}`, { favorite: !isFavorite }, { withCredentials: true });
+      if (response.data.success) {
+        setIsFavorite(response.data.isFavorite);
+      }
+    } catch (error) {
+      console.error('Failed to update favorite', error);
     }
   };
 
@@ -231,6 +258,28 @@ function ChatPage() {
                   </button>
                 ))}
               </div>
+
+              <div className="mb-5 text-left">
+                <label className="mb-2 block font-medium text-[#2e294e]">Write a review</label>
+                <textarea
+                  value={reviewText}
+                  onChange={(event) => setReviewText(event.target.value)}
+                  rows={4}
+                  placeholder="Share your experience with this tutor..."
+                  className="w-full rounded-xl border border-[#dfe3ef] bg-[#f7f8fb] p-3 text-[#2e294e] outline-none focus:border-[#2e294e]"
+                />
+              </div>
+
+              <div className="mb-5 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium ${isFavorite ? 'border-[#d13b63] bg-[#fff1f5] text-[#d13b63]' : 'border-[#dfe3ef] bg-white text-[#2e294e]'}`}
+                >
+                  {isFavorite ? '♥ Favorited' : '♡ Add to favorites'}
+                </button>
+              </div>
+
               <button
                 onClick={handleSubmitRating}
                 disabled={!rating}
