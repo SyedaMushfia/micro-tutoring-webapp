@@ -9,7 +9,7 @@ interface TopUpFormProps {
 
 function BalanceTopUpForm() {
   const { getCardNumberProps, getExpiryDateProps, getCVCProps } = usePaymentInputs();
-  const { userData, backendUrl, setUserData } = useAppContext();
+  const { userData, backendUrl, setUserData, addNotification } = useAppContext();
   const [saveCard, setSaveCard] = useState(false);
 
   // Check if user already has a saved card
@@ -97,6 +97,7 @@ function BalanceTopUpForm() {
             }));
 
             setError("");
+            addNotification('Top up successful', `Rs.${amount} was added to your wallet balance.`);
             setFormData({ cardName: "", cardNumber: "", expiry: "", cvc: "", amount: "" });
         } else {
             setError(response.data?.message);
