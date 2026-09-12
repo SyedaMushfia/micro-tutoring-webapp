@@ -1,4 +1,5 @@
 import { LineChart } from '@mui/x-charts/LineChart';
+import { useAppContext } from '../../context/AppContext';
 
 interface Earning {
   amount: number;
@@ -10,6 +11,7 @@ interface EarningsChartProps {
 }
 
 function EarningsChart({ earnings }: EarningsChartProps) {
+  useAppContext();
   const today = new Date();
   const weekStart = new Date(today);
   weekStart.setHours(0, 0, 0, 0);
@@ -29,8 +31,8 @@ function EarningsChart({ earnings }: EarningsChartProps) {
     .reduce((total, earning) => total + earning.amount, 0));
 
   return (
-    <div className="bg-[#f2f4fc] shadow-lg rounded-2xl p-6 mt-4 w-full">
-      <h2 className="text-[#2e294e] font-semibold text-lg mb-4">
+    <div className='shadow-lg rounded-2xl p-6 mt-4 w-full bg-[#f2f4fc]'>
+      <h2 className='font-semibold text-lg mb-4 text-[#2e294e]'>
         Weekly Earnings Overview
       </h2>
 
