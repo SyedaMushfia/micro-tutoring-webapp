@@ -163,12 +163,21 @@ export const setupProfile = async (req: Request, res: Response) => {
 
         // Store tutor-related fields in the tutor sub-document
         if (role === 'tutor') {
+            const updates: any = {
+                qualification,
+                experience,
+                subjects,
+                bio,
+            };
+
+            if (profilePicture) {
+                updates.profilePicture = profilePicture;
+            }
+
             const updatedUser = await userModel.findByIdAndUpdate(
             userID._id, 
-            {tutor: 
-                {qualification, experience, subjects, bio, profilePicture: profilePicture}
-            }, 
-            {new: true});
+            { $set: { tutor: { ...(userID.tutor || {}), ...updates } } }, 
+            { new: true, runValidators: true });
 
             res.json({success: true, message: "Setting up the profile is complete!", user: updatedUser})
         } 
