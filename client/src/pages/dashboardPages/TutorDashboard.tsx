@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import Menu from '../../components/Menu'
-import MailIcon from '@mui/icons-material/Mail';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import MenuIcon from '@mui/icons-material/Menu';
 import AvailableQuestions from '../../components/tutorDashboardComponents/QuestionRequests';
 import OverviewSection from '../../components/OverviewSection';
@@ -18,12 +16,13 @@ import { useAppContext } from '../../context/AppContext';
 import CircleIcon from '@mui/icons-material/Circle';
 import { socket } from '../../utils';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
+import NotificationBell from '../../components/NotificationBell';
 
 
 function TutorDashboard() {
   const navigate  = useNavigate()
   const width = useViewportWidth();
-  const { backendUrl, userData, isLoading } = useAppContext()
+  const { backendUrl, userData, isLoading, notifications, markNotificationsAsRead } = useAppContext()
 
   // State to track whether tutor is currently online
   const [isOnline, setIsOnline] = useState(userData?.isOnline || false);
@@ -109,12 +108,7 @@ useEffect(() => {
             <div className=' flex justify-between items-center px-[3%] bg-[#2e294e] h-[80px] rounded-2xl'>
                   <h1 className='sm:text-[25px] xs:text-text4 text-white tracking-wide'>{`Welcome, ${userData?.firstName}!`}</h1>
                   <div className='flex items-center gap-[25px]'>
-                      <div className=' text-white'>
-                          <MailIcon className='sm:!text-[30px] xs:!text-[20px]'/>
-                      </div>
-                      <div className='text-white'>
-                          <NotificationsIcon className='sm:!text-[30px] xs:!text-[20px]'/>
-                      </div>
+                      <NotificationBell notifications={notifications} onMarkRead={markNotificationsAsRead} />
                       <div className='relative'>
                         <div className="w-[3.5vw] h-[3.5vw] rounded-full overflow-hidden">
                             {userData?.tutor?.profilePicture ? <img  src={userData?.tutor?.profilePicture} alt="profile picture" className="w-full h-full object-cover" /> : <AccountCircleIcon className='!text-[45px] text-white'/>}
@@ -128,28 +122,26 @@ useEffect(() => {
               </div>
               <Outlet />
           </div>
-        ) : (<div className='flex relative'>
+        ) : (
+          <div className='flex relative h-screen overflow-hidden'>
           <Menu menu={menu} generalMenu={generalMenu}/>
-          <div className='flex flex-col mt-[1%] mx-[1%] absolute left-[19vw] w-[78.5vw]'>
-              <div className=' flex justify-between items-center px-[3%] bg-[#2e294e] h-[80px] rounded-2xl'>
-                  <h1 className='text-[25px] text-white tracking-wide'>{`Welcome, ${userData?.firstName}!`}</h1>
-                  <div className='flex items-center gap-[25px]'>
-                      <div className=' text-white'>
-                          <MailIcon className='!text-[30px]'/>
-                      </div>
-                      <div className='text-white'>
-                          <NotificationsIcon className='!text-[30px]'/>
-                      </div>
-                      <div className='relative'>
-                        <div className="w-[3vw] h-[3vw] rounded-full overflow-hidden">
+          <div className='flex flex-col mt-[1%] mx-[1%] absolute left-[19vw] w-[78.5vw] h-[calc(100vh-2%)]'>
+                <div className=' flex justify-between items-center px-[3%] bg-[#2e294e] h-[80px] rounded-2xl shrink-0'>
+                    <h1 className='text-[25px] text-white tracking-wide'>{`Welcome, ${userData?.firstName}!`}</h1>
+                    <div className='flex items-center gap-[25px]'>
+                        <NotificationBell notifications={notifications} onMarkRead={markNotificationsAsRead} />
+                        <div className='relative'>
+                          <div className="w-[3vw] h-[3vw] rounded-full overflow-hidden">
                             {userData?.tutor?.profilePicture ? <img  src={userData?.tutor?.profilePicture} alt="profile picture" className="w-full h-full object-cover" /> : <AccountCircleIcon className='!text-[45px] text-white'/>}
+                          </div>
+                          {isOnline && <CircleIcon className='absolute lg:left-8 lg:top-8 md:left-6 md:top-[1.25rem] lg:!text-[14px] md:!text-[12px] text-green-400'/>}
                         </div>
-                        {isOnline && <CircleIcon className='absolute lg:left-8 lg:top-8 md:left-6 md:top-[1.25rem] lg:!text-[14px] md:!text-[12px] text-green-400'/>}
-                      </div>
-                  </div>
-              </div>
-              <Outlet />
-          </div>
+                    </div>
+                </div>
+                <div className='mt-[0.125%] flex-1 overflow-y-auto pb-[1%]'>
+                  <Outlet />
+                </div>
+            </div>
         </div>)}
       </div>)}
     </div>
