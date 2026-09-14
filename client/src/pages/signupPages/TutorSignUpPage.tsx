@@ -7,6 +7,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAppContext } from '../../context/AppContext';
 import Select from "react-select";
+import { optimizeImageFile } from '../../utils';
 
 
 function TutorSignUpPage() {
@@ -114,12 +115,19 @@ function TutorSignUpPage() {
     setErrors(prev => ({ ...prev, subjects: values.length ? "" : "Choose at least one subject"}));
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const img = e.target.files?.[0];
-      if (img) {
-        setProfilePicture(img);
-        setPreviewImg(URL.createObjectURL(img));
-      }
+    if (!img) return;
+
+    try {
+      const optimizedImage = await optimizeImageFile(img, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 });
+      setProfilePicture(optimizedImage);
+      setPreviewImg(URL.createObjectURL(optimizedImage));
+    } catch (error) {
+      console.error("Profile image optimization failed", error);
+      setProfilePicture(img);
+      setPreviewImg(URL.createObjectURL(img));
+    }
   }
 
   const handleBioChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
