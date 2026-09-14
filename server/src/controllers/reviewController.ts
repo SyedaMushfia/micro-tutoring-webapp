@@ -6,7 +6,7 @@ import sessionModel from "../models/sessionModel";
 export const createReview = async (req: Request, res: Response) => {
   try {
     const studentId = req.user?._id;
-    const { sessionId, rating } = req.body;
+    const { sessionId, rating, reviewText } = req.body;
     const numericRating = Number(rating);
 
     if (!studentId || !sessionId || !Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
@@ -23,6 +23,7 @@ export const createReview = async (req: Request, res: Response) => {
       studentId: new mongoose.Types.ObjectId(studentId),
       tutorId: session.tutorId,
       rating: numericRating,
+      reviewText: typeof reviewText === "string" ? reviewText.trim() : "",
     });
 
     const summary = await getTutorRatingSummary(session.tutorId.toString());
@@ -42,7 +43,28 @@ export const getTutorRating = async (req: Request, res: Response) => {
     if (!tutorId) return res.status(400).json({ success: false, message: "Tutor ID is required" });
 
     const summary = await getTutorRatingSummary(tutorId);
-    res.json({ success: true, ...summary });
+    const reviews = await reviewModel
+      .find({ tutorId: new mongoose.Types.ObjectId(tutorId) })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "studentId",
+        select: "firstName lastName student.profilePicture",
+      });
+
+    const formattedReviews = reviews.map((review) => ({
+      _id: review._id,
+      studentName: review.studentId
+        ? `${(review.studentId as any).firstName} ${(review.studentId as any).lastName}`.trim()
+        : "Student",
+      profilePicture: (review.studentId as any)?.student?.profilePicture || "",
+      rating: review.rating,
+      reviewText: review.reviewText || "",
+      createdAt: review.createdAt,
+      date: new Date(review.createdAt).toLocaleDateString(),
+      time: new Date(review.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    }));
+
+    res.json({ success: true, ...summary, reviews: formattedReviews });
   } catch (error) {
     console.error("Get tutor rating error:", error);
     res.status(500).json({ success: false, message: "Failed to fetch rating" });
