@@ -7,8 +7,6 @@ import HistoryIcon from '@mui/icons-material/History';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HelpIcon from '@mui/icons-material/Help';
-import MailIcon from '@mui/icons-material/Mail';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import MenuIcon from '@mui/icons-material/Menu';
 import CircleIcon from '@mui/icons-material/Circle';
@@ -16,11 +14,12 @@ import useViewportWidth from '../../hooks/useViewportWidth';
 import { useAppContext } from '../../context/AppContext';
 import { socket } from '../../utils';
 import { Outlet, useNavigate } from 'react-router-dom';
+import NotificationBell from '../../components/NotificationBell';
 
 function StudentDashboard() {
   const navigate  = useNavigate()
   const width = useViewportWidth();
-  const { userData, isLoading } = useAppContext()
+  const { userData, isLoading, notifications, markNotificationsAsRead } = useAppContext()
 
   const isTab = width <= 769;
   const isMobile = width <= 425;
@@ -109,12 +108,7 @@ function StudentDashboard() {
             <div className=' flex justify-between items-center px-[3%] bg-[#2e294e] h-[80px] rounded-2xl'>
                   <h1 className='sm:text-[25px] xs:text-text4 text-white tracking-wide'>{`Welcome, ${userData?.firstName}!`}</h1>
                   <div className='flex items-center gap-[25px]'>
-                      <div className=' text-white'>
-                          <MailIcon className='sm:!text-[30px] xs:!text-[20px]'/>
-                      </div>
-                      <div className='text-white'>
-                          <NotificationsIcon className='sm:!text-[30px] xs:!text-[20px]'/>
-                      </div>
+                      <NotificationBell notifications={notifications} onMarkRead={markNotificationsAsRead} />
                       <div className='relative'>
                         {userData?.student?.profilePicture ?
                           <div className="w-[6vw] h-[6vw] rounded-full overflow-hidden bg-pink-200">
@@ -137,18 +131,13 @@ function StudentDashboard() {
               <Outlet />
           </div>
         ) : (
-          <div className='flex relative'>
+          <div className='flex relative h-screen overflow-hidden'>
           <Menu menu={menu} generalMenu={generalMenu} />
-          <div className='flex flex-col mt-[1%] mx-[1%] absolute left-[19vw] w-[78.5vw]'>
-                <div className=' flex justify-between items-center px-[3%] bg-[#2e294e] h-[80px] rounded-2xl'>
+          <div className='flex flex-col mt-[1%] mx-[1%] absolute left-[19vw] w-[78.5vw] h-[calc(100vh-2%)]'>
+                <div className=' flex justify-between items-center px-[3%] bg-[#2e294e] h-[80px] rounded-2xl shrink-0'>
                     <h1 className='text-[25px] text-white tracking-wide'>{`Welcome, ${userData?.firstName}!`}</h1>
                     <div className='flex items-center gap-[25px]'>
-                        <div className=' text-white'>
-                            <MailIcon className='!text-[30px]'/>
-                        </div>
-                        <div className='text-white'>
-                            <NotificationsIcon className='!text-[30px]'/>
-                        </div>
+                        <NotificationBell notifications={notifications} onMarkRead={markNotificationsAsRead} />
                         <div className='relative'>
                           <div className="w-[3vw] h-[3vw] rounded-full overflow-hidden">
                             {userData?.student?.profilePicture ? <img  src={userData?.student?.profilePicture} alt="profile picture" className="w-full h-full object-cover" /> : <AccountCircleIcon className='!text-[45px] text-white'/>}
@@ -157,7 +146,9 @@ function StudentDashboard() {
                         </div>
                     </div>
                 </div>
-                <Outlet />
+                <div className='mt-[0.125%] flex-1 overflow-y-auto pb-[1%]'>
+                  <Outlet />
+                </div>
             </div>
         </div>)}
       </div>)}
