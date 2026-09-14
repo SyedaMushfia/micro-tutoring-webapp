@@ -101,41 +101,54 @@ export const setupSocket = (io: Server) => {
     io.on("connection", (socket) => {
         console.log("Socket connected:", socket.id);
 
+        const syncUserOnlineStatus = async (userId: string, role: "tutor" | "student", isOnline: boolean) => {
+            if (!userId) return;
+
+            if (role === "tutor") {
+                if (isOnline) {
+                    onlineTutors.set(userId, socket.id);
+                    socket.join(`tutor:${userId}`);
+                    socket.data.tutorId = userId;
+                    socket.data.role = "tutor";
+                } else {
+                    onlineTutors.delete(userId);
+                    socket.leave(`tutor:${userId}`);
+                    delete socket.data.tutorId;
+                    if (socket.data.role === "tutor") delete socket.data.role;
+                }
+            }
+
+            if (role === "student") {
+                if (isOnline) {
+                    onlineStudents.set(userId, socket.id);
+                    socket.data.studentId = userId;
+                    socket.data.role = "student";
+                } else {
+                    onlineStudents.delete(userId);
+                    delete socket.data.studentId;
+                    if (socket.data.role === "student") delete socket.data.role;
+                }
+            }
+
+            await userModel.findByIdAndUpdate(userId, { isOnline });
+            io.emit(role === "tutor" ? "tutor-status-updated" : "student-status-updated", { userId, isOnline });
+        };
+
         // Listen for tutor coming online
         socket.on("tutor-online", async ({ userId }) => {
-            // Validate user role
             const tutor = await userModel.findById(userId);
             if (!tutor || tutor.role !== "tutor") return;
 
-            // Give each tutor a stable room for incoming requests.
-            onlineTutors.set(userId, socket.id);
-            socket.join(`tutor:${userId}`);
-            socket.data.tutorId = userId;
-
-            // Update tutor's online status in database
-            await userModel.findByIdAndUpdate(userId, {
-                isOnline: true
-            })
-
-            // Notify all clients about tutor status change
-            io.emit("tutor-status-updated", { userId, isOnline: true });
-            console.log("Socket connected", socket.id);
+            await syncUserOnlineStatus(userId, "tutor", true);
+            console.log("Tutor online", userId, socket.id);
         });
 
         // Listen for student coming online
         socket.on("student-online", async ({ userId }) => {
-            onlineStudents.set(userId, socket.id);
-            socket.data.studentId = userId;
-
             const student = await userModel.findById(userId);
-
             if (!student || student.role !== "student") return;
 
-            await userModel.findByIdAndUpdate(userId, { 
-                isOnline: true 
-            });
-
-            io.emit("student-status-updated", { userId, isOnline: true });
+            await syncUserOnlineStatus(userId, "student", true);
         })
 
         // Student send question request to tutor. Start 60-second timer for tutor response
@@ -214,18 +227,45 @@ export const setupSocket = (io: Server) => {
             // Retrieve connected socket IDs for both users
             const tutorSocket = socket.id;
             const studentSocket = requestStudentSocket ?? connectedUsers.get(studentId);
+            const tutor = await userModel.findById(tutorId);
+            const tutorName = tutor ? `${tutor.firstName} ${tutor.lastName}`.trim() || tutor.firstName || 'Tutor' : 'Tutor';
 
             // Notify tutor and student that session has started
-            io.to(tutorSocket).emit("question-accepted", { sessionId });
-            if (studentSocket) io.to(studentSocket).emit("question-accepted", { sessionId });
+            io.to(tutorSocket).emit("question-accepted", { sessionId, tutorId, tutorName });
+            if (studentSocket) io.to(studentSocket).emit("question-accepted", { sessionId, tutorId, tutorName });
 
             // Start session timer function
             startSession(sessionId, io);
         })
 
         // Register user socket for direct communication
-        socket.on("register-user", ({ userId }) => {
+        socket.on("register-user", async ({ userId }) => {
             connectedUsers.set(userId, socket.id);
+            socket.data.userId = userId;
+
+            const user = await userModel.findById(userId);
+            if (!user) return;
+
+            if (user.role === "tutor") {
+                if (!onlineTutors.has(userId)) {
+                    onlineTutors.set(userId, socket.id);
+                    socket.join(`tutor:${userId}`);
+                }
+                socket.data.tutorId = userId;
+                socket.data.role = "tutor";
+                await userModel.findByIdAndUpdate(userId, { isOnline: true });
+                io.emit("tutor-status-updated", { userId, isOnline: true });
+            }
+
+            if (user.role === "student") {
+                if (!onlineStudents.has(userId)) {
+                    onlineStudents.set(userId, socket.id);
+                }
+                socket.data.studentId = userId;
+                socket.data.role = "student";
+                await userModel.findByIdAndUpdate(userId, { isOnline: true });
+                io.emit("student-status-updated", { userId, isOnline: true });
+            }
         })
 
         /*
@@ -233,10 +273,25 @@ export const setupSocket = (io: Server) => {
         This is used when a user manually logs out or closes the session
         without fully disconnecting the socket connection.
         */
-        socket.on("disconnect-user", () => {
-            for (const [userId, socketId] of connectedUsers.entries()) {
+        socket.on("disconnect-user", async () => {
+            const userId = socket.data.userId;
+            const role = socket.data.role;
+
+            if (userId && role === "tutor") {
+                onlineTutors.delete(userId);
+                await userModel.findByIdAndUpdate(userId, { isOnline: false });
+                io.emit("tutor-status-updated", { userId, isOnline: false });
+            }
+
+            if (userId && role === "student") {
+                onlineStudents.delete(userId);
+                await userModel.findByIdAndUpdate(userId, { isOnline: false });
+                io.emit("student-status-updated", { userId, isOnline: false });
+            }
+
+            for (const [connectedUserId, socketId] of connectedUsers.entries()) {
                 if (socketId === socket.id) {
-                    connectedUsers.delete(userId);
+                    connectedUsers.delete(connectedUserId);
                 }
             }
         })
@@ -357,26 +412,40 @@ export const setupSocket = (io: Server) => {
         // Automatically triggered when the socket connection is lost. Update user online status in memory and database and notify other clients.
         socket.on("disconnect", async () => {
             const tutorId = socket.data.tutorId;
-            const studentId = socket.data.studentId
+            const studentId = socket.data.studentId;
+            const userId = socket.data.userId;
 
-            if (tutorId) {
-                if (onlineTutors.get(tutorId) === socket.id) {
-                    onlineTutors.delete(tutorId);
-                    await userModel.findByIdAndUpdate(tutorId, {
-                        isOnline: false
-                    });
-                    io.emit("tutor-status-updated", { userId: tutorId, isOnline: false });
-                }
+            if (tutorId && onlineTutors.get(tutorId) === socket.id) {
+                onlineTutors.delete(tutorId);
+                await userModel.findByIdAndUpdate(tutorId, { isOnline: false });
+                io.emit("tutor-status-updated", { userId: tutorId, isOnline: false });
             }
 
-            if (studentId) {
+            if (studentId && onlineStudents.get(studentId) === socket.id) {
                 onlineStudents.delete(studentId);
-                await userModel.findByIdAndUpdate(studentId, {
-                    isOnline: false
-                });
+                await userModel.findByIdAndUpdate(studentId, { isOnline: false });
                 io.emit("student-status-updated", { userId: studentId, isOnline: false });
             }
 
+            if (userId && !tutorId && !studentId) {
+                const user = await userModel.findById(userId);
+                if (user?.role === "tutor") {
+                    onlineTutors.delete(userId);
+                    await userModel.findByIdAndUpdate(userId, { isOnline: false });
+                    io.emit("tutor-status-updated", { userId, isOnline: false });
+                }
+                if (user?.role === "student") {
+                    onlineStudents.delete(userId);
+                    await userModel.findByIdAndUpdate(userId, { isOnline: false });
+                    io.emit("student-status-updated", { userId, isOnline: false });
+                }
+            }
+
+            for (const [connectedUserId, socketId] of connectedUsers.entries()) {
+                if (socketId === socket.id) {
+                    connectedUsers.delete(connectedUserId);
+                }
+            }
         })
         });
 };
