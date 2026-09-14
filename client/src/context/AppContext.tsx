@@ -1,13 +1,24 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { socket } from "../utils";
 
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+}
+
 interface AppContextType {
   backendUrl: string;
   isLoggedIn: boolean;
   setIsLoggedIn: (value: boolean) => void;
   userData: any;
   setUserData: (value: any) => void;
-  isLoading: boolean
+  isLoading: boolean;
+  notifications: AppNotification[];
+  addNotification: (title: string, message: string) => void;
+  markNotificationsAsRead: () => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -19,8 +30,91 @@ interface ProviderProps {
 export const AppContextProvider = ({ children }: ProviderProps) => {
     const backendUrl = 'http://localhost:4000';
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userData, setUserData] = useState(null);
+    const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+    const addNotification = (title: string, message: string) => {
+      const newNotification: AppNotification = {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        title,
+        message,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+      };
+
+      setNotifications((prev) => [newNotification, ...prev].slice(0, 8));
+    };
+
+    const markNotificationsAsRead = () => {
+      setNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true })));
+    };
+
+    useEffect(() => {
+      const handleStatusUpdated = ({ userId, isOnline }: { userId: string; isOnline: boolean }) => {
+        setUserData((prev: any) => {
+          if (!prev || prev._id !== userId) return prev;
+          return { ...prev, isOnline };
+        });
+      };
+
+      socket.on('tutor-status-updated', handleStatusUpdated);
+      socket.on('student-status-updated', handleStatusUpdated);
+
+      return () => {
+        socket.off('tutor-status-updated', handleStatusUpdated);
+        socket.off('student-status-updated', handleStatusUpdated);
+      };
+    }, []);
+
+    useEffect(() => {
+      if (!userData?._id) return;
+
+      const handleQuestionRequest = (data: any) => {
+        if (userData?.role !== 'tutor') return;
+        addNotification('Incoming student request', `A student asked for help in ${data?.subject || 'your subject'}.`);
+      };
+
+      const handleQuestionAccepted = (data: any) => {
+        if (userData?.role === 'student') {
+          const tutorName = data?.tutorName ? ` by ${data.tutorName}` : '';
+          addNotification('Session accepted', `Your session request was accepted${tutorName}. Please join the session now.`);
+        }
+
+        if (userData?.role === 'tutor') {
+          addNotification('Session started', 'Your tutoring session has started. Please join the session room.');
+        }
+      };
+
+      const handleSessionEnded = (data: any) => {
+        if (userData?.role === 'student') {
+          addNotification('Session completed', `Your session has ended and Rs.${data?.studentAmountDeducted ?? 250} was deducted from your wallet.`);
+          addNotification('Payment successful', `Payment successful. Rs.${data?.studentAmountDeducted ?? 250} has been processed.`);
+        }
+
+        if (userData?.role === 'tutor') {
+          addNotification('Session completed', `Your tutoring session has ended and Rs.${data?.tutorAmountCredited ?? 250} was added to your earnings.`);
+          addNotification('Payment received', `Payment received. Rs.${data?.tutorAmountCredited ?? 250} was credited to your account.`);
+        }
+      };
+
+      const handleRatingSubmitted = (data: any) => {
+        if (userData?.role !== 'tutor' || data?.tutorId !== userData._id) return;
+        addNotification('New review', `You received a new rating of ${data?.average ?? data?.rating ?? '5'} out of 5.`);
+      };
+
+      socket.on('question-request', handleQuestionRequest);
+      socket.on('question-accepted', handleQuestionAccepted);
+      socket.on('session-ended', handleSessionEnded);
+      socket.on('rating-submitted', handleRatingSubmitted);
+
+      return () => {
+        socket.off('question-request', handleQuestionRequest);
+        socket.off('question-accepted', handleQuestionAccepted);
+        socket.off('session-ended', handleSessionEnded);
+        socket.off('rating-submitted', handleRatingSubmitted);
+      };
+    }, [userData?._id, userData?.role]);
 
     /*
       Socket listener for student wallet deduction
@@ -105,7 +199,10 @@ export const AppContextProvider = ({ children }: ProviderProps) => {
         backendUrl,
         isLoggedIn, setIsLoggedIn,
         userData, setUserData,
-        isLoading
+        isLoading,
+        notifications,
+        addNotification,
+        markNotificationsAsRead,
     }
 
     return (
