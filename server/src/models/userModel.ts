@@ -7,6 +7,13 @@ interface TutorProfile {
   bio?: string;
   profilePicture?: string;
   earnings?: number;
+  bankDetails?: {
+    bankName?: string;
+    accountName?: string;
+    accountNumber?: string;
+    branchCode?: string;
+    swiftCode?: string;
+  };
 }
 
 interface StudentProfile {
@@ -16,10 +23,18 @@ interface StudentProfile {
   profilePicture?: string;
   institutionOrSchool?: string;
   balance?: number;
+  favoriteTutors?: mongoose.Types.ObjectId[];
   savedCard?: {
     cardName: string;
     cardNumber: string;
     expiry: string;
+  };
+  bankDetails?: {
+    bankName?: string;
+    accountName?: string;
+    accountNumber?: string;
+    branchCode?: string;
+    swiftCode?: string;
   };
 }
 
@@ -30,6 +45,13 @@ const tutorSchema = new mongoose.Schema({
   bio: String,
   profilePicture: String,
   earnings: { type: Number, default: 0 },
+  bankDetails: {
+    bankName: String,
+    accountName: String,
+    accountNumber: String,
+    branchCode: String,
+    swiftCode: String,
+  }
 }, { _id: false });
 
 const studentSchema = new mongoose.Schema({
@@ -39,10 +61,18 @@ const studentSchema = new mongoose.Schema({
   profilePicture: String,
   institutionOrSchool: String,
   balance: { type: Number, default: 0 },
+  favoriteTutors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] }],
   savedCard: {
     cardName: String,
     cardNumber: String,
     expiry: String
+  },
+  bankDetails: {
+    bankName: String,
+    accountName: String,
+    accountNumber: String,
+    branchCode: String,
+    swiftCode: String,
   }
 }, { _id: false });
 
