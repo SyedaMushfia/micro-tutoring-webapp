@@ -22,26 +22,50 @@ const app: Express = express();
 const server: http.Server = http.createServer(app);
 
 const port: number = parseInt(process.env.PORT as string, 10) || 4000;
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+    "https://quicktutor.vercel.app",
+    "https://quicktutor.onrender.com",
+    "http://localhost:5173",
+    "http://localhost:3000",
+].filter((origin): origin is string => Boolean(origin));
+
 connectDB();
 
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173",
-        methods: ["GET", "POST"], 
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+                return;
+            }
+
+            callback(new Error("Not allowed by CORS"));
+        },
+        methods: ["GET", "POST"],
         credentials: true,
     }
-})
+});
 
 setupSocket(io);
-
 
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true
-}))
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 // API Endpoints
 app.get("/", (req, res) => {
