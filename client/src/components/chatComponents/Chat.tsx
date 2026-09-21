@@ -94,8 +94,8 @@ function Chat({ sessionId , userData, otherUser, isRecorded}: ChatProps) {
 
       try {
         const res = await axios.post(
-          "http://localhost:4000/api/chat/upload-image", 
-          formData, 
+          `${backendUrl}/api/chat/upload-image`,
+          formData,
           { withCredentials: true, headers: { "Content-Type": "multipart/form-data" }});
         imageUrl = res.data.imageUrl; // get uploaded image URL
       } catch (error) {

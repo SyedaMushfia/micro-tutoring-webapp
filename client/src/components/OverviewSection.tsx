@@ -58,11 +58,11 @@ function OverviewSection({ role, earnings, spendings, questionsCount }: Overview
 
     const fetchRating = async () => {
       try {
-        const profile = await axios.get("http://localhost:4000/api/auth/profile", { withCredentials: true });
+        const profile = await axios.get(`${backendUrl}/api/auth/profile`, { withCredentials: true });
         const tutorId = profile.data.user?._id;
         if (!tutorId) return;
 
-        const response = await axios.get(`http://localhost:4000/api/reviews/tutor/${tutorId}`, { withCredentials: true });
+        const response = await axios.get(`${backendUrl}/api/reviews/tutor/${tutorId}`, { withCredentials: true });
         if (response.data.success) setRating(response.data.average);
       } catch (error) {
         console.error(error);
@@ -77,7 +77,7 @@ function OverviewSection({ role, earnings, spendings, questionsCount }: Overview
     return () => {
       socket.off("rating-submitted", handleRatingSubmitted);
     };
-  }, [role]);
+  }, [backendUrl, role]);
 
   const tutorCards = [
     {

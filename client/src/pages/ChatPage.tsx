@@ -15,7 +15,7 @@ interface SessionEndedPayload {
 }
 
 function ChatPage() {
-  const { userData } = useAppContext()
+  const { userData, backendUrl } = useAppContext()
   const width = useViewportWidth();
   const isTab = width <= 769;
 
@@ -60,7 +60,7 @@ function ChatPage() {
   useEffect(() => {
     if (!sessionId || !userData?._id) return;
 
-    axios.get(`http://localhost:4000/api/session/${sessionId}`, {withCredentials: true})
+    axios.get(`${backendUrl}/api/session/${sessionId}`, {withCredentials: true})
       .then(async (res) => {
         console.log("Session data:", res.data);
         const session = res.data;
@@ -69,7 +69,7 @@ function ChatPage() {
 
         if (userData?.role === 'student' && session.tutor?._id) {
           try {
-            const favoriteRes = await axios.get(`${userData ? 'http://localhost:4000' : ''}/api/user/favorites`, { withCredentials: true });
+            const favoriteRes = await axios.get(`${backendUrl}/api/user/favorites`, { withCredentials: true });
             const favorites = favoriteRes.data?.favorites || [];
             const match = favorites.some((tutor: any) => tutor._id === session.tutor._id);
             setIsFavorite(match);
@@ -96,7 +96,7 @@ function ChatPage() {
         });
       })
       .catch (error => console.error(error));
-  }, [sessionId, userData])
+  }, [backendUrl, sessionId, userData])
 
   // Listen for session-ended event from server. Show wallet deduction/credit message.
   useEffect(() => {
@@ -165,7 +165,7 @@ function ChatPage() {
     if (!sessionId || !tutorId || !rating) return;
 
     try {
-      const response = await axios.post("http://localhost:4000/api/reviews", {
+      const response = await axios.post(`${backendUrl}/api/reviews`, {
         sessionId,
         rating,
         reviewText,
@@ -189,7 +189,7 @@ function ChatPage() {
     if (!tutorId) return;
 
     try {
-      const response = await axios.post(`http://localhost:4000/api/user/favorites/${tutorId}`, { favorite: !isFavorite }, { withCredentials: true });
+      const response = await axios.post(`${backendUrl}/api/user/favorites/${tutorId}`, { favorite: !isFavorite }, { withCredentials: true });
       if (response.data.success) {
         setIsFavorite(response.data.isFavorite);
       }

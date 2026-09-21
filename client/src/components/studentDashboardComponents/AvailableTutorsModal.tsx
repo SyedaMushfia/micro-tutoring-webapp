@@ -47,8 +47,8 @@ function AvailableTutorsModal({onShowModal, subject, questionData} : AvailableTu
   // Fetch online tutors from backend based on selected subject
   const fetchOnlineTutors = async () => {
     const [tutorsRes, favoritesRes] = await Promise.all([
-      axios.get(`http://localhost:4000/api/user/online-tutors?subject=${subject}`, { withCredentials: true }),
-      axios.get(`http://localhost:4000/api/user/favorites`, { withCredentials: true }),
+      axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/user/online-tutors?subject=${subject}`, { withCredentials: true }),
+      axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/user/favorites`, { withCredentials: true }),
     ]);
 
     const favoriteIds = new Set((favoritesRes.data?.favorites || []).map((tutor: any) => tutor._id));
