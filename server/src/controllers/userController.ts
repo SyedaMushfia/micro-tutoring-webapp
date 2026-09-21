@@ -339,8 +339,8 @@ export const deleteAccount = async (req: Request, res: Response) => {
 
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: process.env.NODE_ENV === "production" || Boolean(process.env.FRONTEND_URL),
+      sameSite: process.env.NODE_ENV === "production" || Boolean(process.env.FRONTEND_URL) ? "none" : "strict",
       path: "/",
     });
 

@@ -9,6 +9,18 @@ if (!JWT_SECRET) {
     throw new Error("JWT_SECRET is missing in environment variables");
 }
 
+const getCookieOptions = () => {
+    const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.FRONTEND_URL);
+
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" as const : "strict" as const,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: "/",
+    };
+};
+
 const normalizeSubjects = (rawSubjects: unknown): string[] => {
     if (!rawSubjects) return [];
 
@@ -73,12 +85,7 @@ export const registerUser = async (req: Request, res: Response) => {
         const token = jwt.sign({id: user._id}, JWT_SECRET, { expiresIn: '7d'})
 
         // Store JWT in HTTP-only cookie to preserve authentication state
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        })
+        res.cookie('token', token, getCookieOptions());
 
         // Mark user as online after successful registration
         user.isOnline = true;
@@ -117,12 +124,7 @@ export const loginUser = async (req: Request, res: Response) => {
         const token = jwt.sign({id: user._id}, JWT_SECRET, { expiresIn: '7d'})
 
         // Store token in HTTP-only cookie
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        })
+        res.cookie('token', token, getCookieOptions());
 
         user.isOnline = true;
         await user.save();
@@ -145,9 +147,9 @@ export const logoutUser = async (req: Request, res: Response) => {
 
         res.clearCookie('token', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-            path: "/"
+            secure: process.env.NODE_ENV === "production" || Boolean(process.env.FRONTEND_URL),
+            sameSite: process.env.NODE_ENV === "production" || Boolean(process.env.FRONTEND_URL) ? "none" : "strict",
+            path: "/",
         })
 
         return res.json({success: true, message: "Logged out successfully"})
