@@ -9,6 +9,26 @@ if (!JWT_SECRET) {
     throw new Error("JWT_SECRET is missing in environment variables");
 }
 
+const normalizeSubjects = (rawSubjects: unknown): string[] => {
+    if (!rawSubjects) return [];
+
+    if (Array.isArray(rawSubjects)) {
+        return rawSubjects
+            .filter((subject): subject is string => typeof subject === "string")
+            .map((subject) => subject.trim())
+            .filter(Boolean);
+    }
+
+    if (typeof rawSubjects === "string") {
+        return rawSubjects
+            .split(",")
+            .map((subject) => subject.trim())
+            .filter(Boolean);
+    }
+
+    return [];
+};
+
 export const registerUser = async (req: Request, res: Response) => {
     
     // Extract user details
@@ -148,53 +168,70 @@ export const isAuthenticated = (req: Request, res: Response) => {
 export const setupProfile = async (req: Request, res: Response) => {
 
     try {
-        // Extract authenticated user from token
         const userID = (req as any).user;
-        const role = userID.role;
-        
-        // Extract all available profile fields from the request body. Role-specific fields will be saved based on user role
-        const { qualification, experience, subjects, bio, grade, curriculum, gender, institutionOrSchool } = req.body;
+        const role = userID?.role;
 
-        let profilePicture = undefined;
-
-        if (req.file) {
-            profilePicture = (req.file).path;
+        if (!userID?._id) {
+            return res.json({ success: false, message: "Not authorized" });
         }
 
-        // Store tutor-related fields in the tutor sub-document
+        const { qualification, experience, bio, grade, curriculum, gender, institutionOrSchool } = req.body;
+        const rawSubjects = req.body.subjects ?? req.body["subjects[]"] ?? [];
+        const subjects = normalizeSubjects(rawSubjects);
+
+        let profilePicture = userID?.tutor?.profilePicture ?? userID?.student?.profilePicture;
+        if (req.file) {
+            profilePicture = req.file.path;
+        }
+
         if (role === 'tutor') {
             const updates: any = {
                 qualification,
                 experience,
                 subjects,
                 bio,
+                ...(profilePicture ? { profilePicture } : {}),
             };
 
-            if (profilePicture) {
-                updates.profilePicture = profilePicture;
-            }
-
             const updatedUser = await userModel.findByIdAndUpdate(
-            userID._id, 
-            { $set: { tutor: { ...(userID.tutor || {}), ...updates } } }, 
-            { new: true, runValidators: true });
+                userID._id,
+                {
+                    $set: {
+                        tutor: {
+                            ...(userID.tutor || {}),
+                            ...updates,
+                        },
+                    },
+                },
+                { new: true, runValidators: true }
+            ).select("-password");
 
-            res.json({success: true, message: "Setting up the profile is complete!", user: updatedUser})
-        } 
-        // Store student-related fields in the student sub-document
-        else if (role === 'student') {
-            const updatedUser = await userModel.findByIdAndUpdate(
-            userID._id, 
-            {student: 
-                {grade, curriculum, gender, institutionOrSchool, profilePicture: profilePicture}
-            }, 
-            {new: true});
-
-            res.json({success: true, message: "Setting up the profile is complete!", user: updatedUser})
-        } else {
-            return res.json({ success: false, message: "Role is invalid"})
+            return res.json({ success: true, message: "Setting up the profile is complete!", user: updatedUser });
         }
-        
+
+        if (role === 'student') {
+            const updatedUser = await userModel.findByIdAndUpdate(
+                userID._id,
+                {
+                    $set: {
+                        student: {
+                            ...(userID.student || {}),
+                            grade,
+                            curriculum,
+                            gender,
+                            institutionOrSchool,
+                            profilePicture,
+                        },
+                    },
+                },
+                { new: true }
+            ).select("-password");
+
+            return res.json({ success: true, message: "Setting up the profile is complete!", user: updatedUser });
+        }
+
+        return res.json({ success: false, message: "Role is invalid" });
+
     } catch (error: any) {
         return res.json({ success: false, message: error.message });
     }
