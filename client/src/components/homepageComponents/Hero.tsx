@@ -12,7 +12,7 @@ function Hero() {
         <>
         <div className='flex flex-col justify-center items-center pb-[10%]'>
             <div className='w-[70vw] mt-[8%]'>
-              <img src='public\tutoring.png' alt='A tutor and a student' className='w-full h-full object-cover'/>
+              <img src='/tutoring.png' alt='A tutor and a student' className='w-full h-full object-cover'/>
             </div>
             <div className='font-sans w-[70vw] mt-[50px] text-center'>
                 <h1 className='text-[30px] font-bold text-[#2e294e] mb-[10px] text-center'>Get Instant <span className='text-[#c5d86d]'>Academic Help</span> — Anytime, Anywhere</h1>
@@ -29,7 +29,7 @@ function Hero() {
             <NavLink to='/signup'><button className='bg-[#c5d86d] px-[20%] py-[3%] text-heroh3 font-semibold tracking-wide rounded-full text-white hover:bg-[#d1e674]'>Join Now</button></NavLink>
         </div>
         <div className='w-[50%] mt-[4%]'>
-          <img src='public\tutoring.png' alt='A tutor and a student' className='w-full h-full object-contain'/>
+          <img src='/tutoring.png' alt='A tutor and a student' className='w-full h-full object-contain'/>
         </div>
     </div>
     )}

@@ -24,11 +24,11 @@ function SignUpPage() {
       <div className={`flex flex-col lg:w-[53%] md:w-[55%] sm:w-[90%] lg:ml-[4%] md:ml-[2.5%] py-[25px] ${isTab ? 'items-center' : 'items-start'}`}>
           <NavLink to='/'>
             <div className="lg:w-[275px] md:w-[260px] sm:w-[275px] xs:w-[275px] h-[80px]">
-              <img src="public/logo-1.png" alt="logo" className="w-full h-full object-fill" />
+              <img src="/logo-1.png" alt="logo" className="w-full h-full object-fill" />
             </div>
           </NavLink>
           <div className='w-[98%] lg:mt-[1%] md:mt-[10%] lg:h-[600px] md:h-[450px]'>
-            <img src="public/online-learning.png" alt="" className='w-full h-full object-cover'/>
+            <img src="/online-learning.png" alt="" className='w-full h-full object-cover'/>
           </div>
       </div>
       <div 

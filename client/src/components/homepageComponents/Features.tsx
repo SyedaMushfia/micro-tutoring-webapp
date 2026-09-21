@@ -7,19 +7,19 @@ function Features() {
 
   const cards = [
     {
-      icon: 'public/ask-question-icon.png',
+      icon: '/ask-question-icon.png',
       title: "Ask Your Question",
       desc: "Post your academic question anytime and attach files or images for clarity.",
       iconAlt: 'Ask question icon'
     },
     {
-      icon: "public/chat-icon.png",
+      icon: "/chat-icon.png",
       title: "Connect with a Tutor",
       desc: "Get matched instantly with a tutor and chat in real time to understand your topic.",
       iconAlt: 'Chat icon'
     },
     {
-      icon: "public/learn-icon.png",
+      icon: "/learn-icon.png",
       title: "Learn & Improve",
       desc: "Discuss, get step-by-step explanations, and understand the solution — not just the answer.",
       iconAlt: 'Book icon'

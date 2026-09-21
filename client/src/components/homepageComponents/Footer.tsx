@@ -38,7 +38,7 @@ function Footer() {
         {isMobile ? (
             <>
             <div className='bg-[#2e294e] px-[15%] py-[8%]'>
-                <div className="w-[250px] h-[80px] mx-[15%] mb-[5%]"><img src="public/logo.png" alt="logo" className="w-full h-full object-fill" /></div>
+                <div className="w-[250px] h-[80px] mx-[15%] mb-[5%]"><img src="/logo.png" alt="logo" className="w-full h-full object-fill" /></div>
                 <div className='flex justify-between text-white'>
                    <div>
                         <ul>
@@ -59,7 +59,7 @@ function Footer() {
             </>
         ) : (
             <div className='bg-[#2e294e] flex justify-between items-center text-white px-[5vw] py-[3%]'>
-                <div className="w-[250px] h-[80px]"><img src="public/logo.png" alt="logo" className="w-full h-full object-fill" /></div>
+                <div className="w-[250px] h-[80px]"><img src="/logo.png" alt="logo" className="w-full h-full object-fill" /></div>
                 <div>
                     <ul>
                         {footerMenu.map(item => (

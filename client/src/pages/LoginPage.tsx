@@ -1,5 +1,5 @@
 import React, { useState, type ChangeEvent } from 'react'
-import background from '../../public/background.png';
+import background from '/background.png';
 import ErrorIcon from '@mui/icons-material/Error';
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAppContext } from '../context/AppContext';
@@ -102,7 +102,7 @@ function LoginPage() {
       <div className="flex justify-center items-center bg-cover bg-center h-[729px]" style={{ backgroundImage: `url(${background})` }}>
         <div className='flex flex-col items-center md:w-[40vw] lg:w-[30vw] sm:w-[50vw] xs:w-[60vw] h-[575px] px-[5%] py-[1.5%] bg-[#e8e8e8] rounded-xl shadow-lg ring-1 ring-white'>
             <NavLink to='/'>
-            <div className="lg:w-[255px] md:w-[260px] sm:w-[275px] xs:w-[45vw] h-[70px] mb-[15%]"><img src="public/nobglogo.png" alt="logo" className="w-full h-full object-fill" /></div>
+            <div className="lg:w-[255px] md:w-[260px] sm:w-[275px] xs:w-[45vw] h-[70px] mb-[15%]"><img src="/nobglogo.png" alt="logo" className="w-full h-full object-fill" /></div>
             </NavLink>
             <h3 className='text-[16px] tracking-wide text-center text-[#555] mb-[8%]'>Sign in to your QuickTutor Account</h3>
             <form onSubmit={handleSubmit}>

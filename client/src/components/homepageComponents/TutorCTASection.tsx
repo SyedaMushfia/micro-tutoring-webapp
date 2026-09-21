@@ -13,7 +13,7 @@ function TutorCTASection() {
         <>
         <div className='flex flex-col justify-center items-center pb-[10%]'>
             <div className='w-[70vw] mt-[8%]'>
-                <img src='public\tutor.png' alt='A tutor and a student' className='w-full h-full object-cover'/>
+                <img src='/tutor.png' alt='A tutor and a student' className='w-full h-full object-cover'/>
             </div>
             <div className='font-sans w-[70vw] mt-[50px] text-center'>
                 <h1 className='text-[30px] font-bold text-[#2e294e] mb-[10px] text-center'>Tutor <span className='text-[#c5d86d]'>On-Demand</span>. Earn Per Question.</h1>
@@ -24,7 +24,7 @@ function TutorCTASection() {
         </>
     ) : (
       <div className='flex gap-[5%] mx-[5vw] mt-[6vh] pb-[5%]'>
-      <div className='w-[50%] mt-[4%]'><img src="public/tutor.png" alt="A tutor teaching a student online." /></div>
+      <div className='w-[50%] mt-[4%]'><img src="/tutor.png" alt="A tutor teaching a student online." /></div>
       <div className='w-[50%] text-center mt-[8%]'>
         <h1 className='text-heroh1 font-bold text-[#2e294e] mb-[10px]'>Tutor <span className='text-[#c5d86d]'>On-Demand</span>. Earn Per Question.</h1>
         <h3 className='text-[#555] text-heroh3 mb-[20px]'>Help students succeed while you earn from your knowledge — flexible, fast, and rewarding.</h3>
