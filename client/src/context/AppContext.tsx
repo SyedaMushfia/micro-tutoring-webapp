@@ -23,6 +23,27 @@ interface AppContextType {
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
+export const mergeUserProfile = (previousUser: any, incomingUser: any) => {
+  if (!incomingUser) return previousUser ?? null;
+
+  const mergedStudent = {
+    ...(previousUser?.student || {}),
+    ...(incomingUser?.student || {}),
+  };
+
+  const mergedTutor = {
+    ...(previousUser?.tutor || {}),
+    ...(incomingUser?.tutor || {}),
+  };
+
+  return {
+    ...(previousUser || {}),
+    ...(incomingUser || {}),
+    student: mergedStudent,
+    tutor: mergedTutor,
+  };
+};
+
 interface ProviderProps {
   children: ReactNode;
 }
@@ -178,7 +199,7 @@ export const AppContextProvider = ({ children }: ProviderProps) => {
                 const data = await res.json();
 
                 if (data.success) {
-                    setUserData(data.user);
+                    setUserData(mergeUserProfile(null, data.user));
                     setIsLoggedIn(true);
                 } else {
                     setUserData(null);

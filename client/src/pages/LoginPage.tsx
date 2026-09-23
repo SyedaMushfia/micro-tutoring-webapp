@@ -2,7 +2,7 @@ import React, { useState, type ChangeEvent } from 'react'
 import background from '/background.png';
 import ErrorIcon from '@mui/icons-material/Error';
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAppContext } from '../context/AppContext';
+import { mergeUserProfile, useAppContext } from '../context/AppContext';
 import axios from 'axios';
 import { socket } from '../utils';
 
@@ -77,7 +77,7 @@ function LoginPage() {
       // Get logged-in user profile
       const getProfileRes = await axios.get(`${backendUrl}/api/auth/profile`, {withCredentials: true});
       setIsLoggedIn(true);
-      setUserData(getProfileRes.data.user);
+      setUserData((prev: any) => mergeUserProfile(prev, getProfileRes.data.user));
 
       // Register user in socket for real-time features
       socket.emit("register-user", { userId: getProfileRes.data.user._id });

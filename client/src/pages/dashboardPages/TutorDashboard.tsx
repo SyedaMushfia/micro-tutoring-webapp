@@ -25,7 +25,11 @@ function TutorDashboard() {
   const { backendUrl, userData, isLoading, notifications, markNotificationsAsRead } = useAppContext()
 
   // State to track whether tutor is currently online
-  const [isOnline, setIsOnline] = useState(userData?.isOnline || false);
+  const [isOnline, setIsOnline] = useState(Boolean(userData?.isOnline));
+
+  useEffect(() => {
+    setIsOnline(Boolean(userData?.isOnline));
+  }, [userData?._id, userData?.isOnline]);
 
   const isTab = width <= 769;
   const isMobile = width <= 425;

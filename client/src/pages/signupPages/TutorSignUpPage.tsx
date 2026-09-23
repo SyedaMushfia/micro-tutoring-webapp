@@ -5,7 +5,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAppContext } from '../../context/AppContext';
+import { mergeUserProfile, useAppContext } from '../../context/AppContext';
 import Select from "react-select";
 import { optimizeImageFile } from '../../utils';
 
@@ -174,7 +174,7 @@ function TutorSignUpPage() {
     );
 
     if (res.data.success) {
-      setUserData(res.data.user);
+      setUserData((prev: any) => mergeUserProfile(prev, res.data.user));
       navigate("/tutorDashboard");
     }
 

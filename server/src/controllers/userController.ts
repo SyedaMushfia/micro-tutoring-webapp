@@ -354,15 +354,16 @@ export const getOnlineTutorsBySubject = async (req: Request, res: Response) => {
   try {
     const { subject } = req.query;
 
-    if (!subject) {
+    if (!subject || typeof subject !== "string") {
       return res.json({ success: false, message: "Subject is required" });
     }
 
-    const tutors = await userModel.find({ role: 'tutor', isOnline: true, "tutor.subjects": subject }).select("firstName lastName tutor"); 
-    
-    res.json(tutors);
-  } catch (err) {
+    const tutors = await userModel
+      .find({ role: "tutor", isOnline: true, "tutor.subjects": subject })
+      .select("firstName lastName tutor");
 
-    res.json({ success: false, message: 'Tutors unavailable. Please try again later!' });
+    return res.json({ success: true, tutors });
+  } catch (err: any) {
+    return res.json({ success: false, message: "Tutors unavailable. Please try again later!", error: err.message });
   }
 };

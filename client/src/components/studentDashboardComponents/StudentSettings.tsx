@@ -4,7 +4,7 @@ import Select from 'react-select';
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import { useAppContext } from '../../context/AppContext';
+import { mergeUserProfile, useAppContext } from '../../context/AppContext';
 import { optimizeImageFile } from '../../utils';
 
 const gradeOptions = [
@@ -124,7 +124,7 @@ function StudentSettings() {
         return;
       }
 
-      setUserData(response.data.user);
+      setUserData((prev: any) => mergeUserProfile(prev, response.data.user));
       setProfileSuccess('Profile updated successfully');
       setProfileImage(null);
     } catch (error: any) {

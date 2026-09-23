@@ -46,14 +46,35 @@ function AvailableTutorsModal({onShowModal, subject, questionData} : AvailableTu
 
   // Fetch online tutors from backend based on selected subject
   const fetchOnlineTutors = async () => {
-    const [tutorsRes, favoritesRes] = await Promise.all([
-      axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/user/online-tutors?subject=${subject}`, { withCredentials: true }),
-      axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/user/favorites`, { withCredentials: true }),
-    ]);
+    if (!subject) {
+      setOnlineTutors([]);
+      return;
+    }
 
-    const favoriteIds = new Set((favoritesRes.data?.favorites || []).map((tutor: any) => tutor._id));
-    const tutors = tutorsRes.data.map((tutor: Tutor) => ({ ...tutor, isFavorite: favoriteIds.has(tutor._id) }));
-    setOnlineTutors(tutors);
+    try {
+      const [tutorsRes, favoritesRes] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/user/online-tutors?subject=${encodeURIComponent(subject)}`, { withCredentials: true }),
+        axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/user/favorites`, { withCredentials: true }),
+      ]);
+
+      const tutorsList = Array.isArray(tutorsRes.data)
+        ? tutorsRes.data
+        : Array.isArray(tutorsRes.data?.tutors)
+          ? tutorsRes.data.tutors
+          : [];
+
+      const favoriteIds = new Set(
+        Array.isArray(favoritesRes.data?.favorites)
+          ? favoritesRes.data.favorites.map((tutor: any) => tutor._id)
+          : []
+      );
+
+      const tutors = tutorsList.map((tutor: Tutor) => ({ ...tutor, isFavorite: favoriteIds.has(tutor._id) }));
+      setOnlineTutors(tutors);
+    } catch (error) {
+      console.error('Failed to fetch online tutors', error);
+      setOnlineTutors([]);
+    }
   }
 
   // Fetch tutors on component mount and listen for tutor status updates

@@ -4,7 +4,7 @@ import SignUpForm from '../../components/SignUpForm';
 import ErrorIcon from '@mui/icons-material/Error';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '../../context/AppContext';
+import { mergeUserProfile, useAppContext } from '../../context/AppContext';
 import axios from 'axios';
 import Select from "react-select";
 import { optimizeImageFile } from '../../utils';
@@ -138,7 +138,7 @@ function StudentSignUpPage() {
       );
 
       if (res.data.success) {
-        setUserData(res.data.user)
+        setUserData((prev: any) => mergeUserProfile(prev, res.data.user))
         navigate("/studentDashboard");
       }
 

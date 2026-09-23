@@ -27,7 +27,11 @@ function StudentDashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // State to track student online status
-  const [isOnline, setIsOnline] = useState(userData?.isOnline || false);
+  const [isOnline, setIsOnline] = useState(Boolean(userData?.isOnline));
+
+  useEffect(() => {
+    setIsOnline(Boolean(userData?.isOnline));
+  }, [userData?._id, userData?.isOnline]);
 
   // Register student with socket server when user loads
   useEffect(() => {
