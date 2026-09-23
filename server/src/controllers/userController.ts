@@ -157,9 +157,10 @@ export const updateTutorProfile = async (req: Request, res: Response) => {
       const curriculum = String(req.body.curriculum ?? currentUser.student?.curriculum ?? "").trim();
       const gender = String(req.body.gender ?? currentUser.student?.gender ?? "").trim();
       const institutionOrSchool = String(req.body.institutionOrSchool ?? currentUser.student?.institutionOrSchool ?? "").trim();
-      const nextProfilePicture = req.file?.path || currentUser.student?.profilePicture;
+      const uploadedProfilePicture = (req.file as any)?.path || (req.file as any)?.secure_url || (req.file as any)?.url;
+      const nextProfilePicture = uploadedProfilePicture || currentUser.student?.profilePicture;
 
-      if (req.file?.path && currentUser.student?.profilePicture && currentUser.student.profilePicture !== req.file.path) {
+      if (uploadedProfilePicture && currentUser.student?.profilePicture && currentUser.student.profilePicture !== uploadedProfilePicture) {
         try {
           await deleteCloudinaryImage(currentUser.student.profilePicture);
         } catch {
@@ -204,9 +205,10 @@ export const updateTutorProfile = async (req: Request, res: Response) => {
     const bio = String(req.body.bio ?? currentUser.tutor?.bio ?? "").trim();
     const rawSubjects = req.body.subjects ?? req.body["subjects[]"] ?? currentUser.tutor?.subjects ?? [];
     const subjects = normalizeSubjects(rawSubjects);
-    const nextProfilePicture = req.file?.path || currentUser.tutor?.profilePicture;
+    const uploadedProfilePicture = (req.file as any)?.path || (req.file as any)?.secure_url || (req.file as any)?.url;
+    const nextProfilePicture = uploadedProfilePicture || currentUser.tutor?.profilePicture;
 
-    if (req.file?.path && currentUser.tutor?.profilePicture && currentUser.tutor.profilePicture !== req.file.path) {
+    if (uploadedProfilePicture && currentUser.tutor?.profilePicture && currentUser.tutor.profilePicture !== uploadedProfilePicture) {
       try {
         await deleteCloudinaryImage(currentUser.tutor.profilePicture);
       } catch {

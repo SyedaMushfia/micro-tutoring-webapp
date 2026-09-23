@@ -184,15 +184,16 @@ export const setupProfile = async (req: Request, res: Response) => {
 
         let profilePicture = userID?.tutor?.profilePicture ?? userID?.student?.profilePicture;
         if (req.file) {
+            const uploadedProfilePicture = (req.file as any)?.path || (req.file as any)?.secure_url || (req.file as any)?.url;
             const previousProfile = userID?.role === 'tutor' ? userID?.tutor?.profilePicture : userID?.student?.profilePicture;
-            if (previousProfile && previousProfile !== req.file.path) {
+            if (uploadedProfilePicture && previousProfile && previousProfile !== uploadedProfilePicture) {
                 try {
                     await deleteCloudinaryImage(previousProfile);
                 } catch {
                     // ignore Cloudinary cleanup failures so profile setup can still complete
                 }
             }
-            profilePicture = req.file.path;
+            profilePicture = uploadedProfilePicture || profilePicture;
         }
 
         if (role === 'tutor') {
