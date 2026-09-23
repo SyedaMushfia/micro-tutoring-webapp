@@ -100,12 +100,34 @@ function TutorSettings() {
 
     try {
       const optimizedImage = await optimizeImageFile(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 });
+      const previewUrl = URL.createObjectURL(optimizedImage);
       setProfileImage(optimizedImage);
-      setPreviewImage(URL.createObjectURL(optimizedImage));
+      setPreviewImage(previewUrl);
+      setUserData((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tutor: {
+            ...(prev.tutor || {}),
+            profilePicture: previewUrl,
+          },
+        };
+      });
     } catch (error) {
       console.error('Profile image optimization failed', error);
+      const previewUrl = URL.createObjectURL(file);
       setProfileImage(file);
-      setPreviewImage(URL.createObjectURL(file));
+      setPreviewImage(previewUrl);
+      setUserData((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tutor: {
+            ...(prev.tutor || {}),
+            profilePicture: previewUrl,
+          },
+        };
+      });
     }
   };
 
