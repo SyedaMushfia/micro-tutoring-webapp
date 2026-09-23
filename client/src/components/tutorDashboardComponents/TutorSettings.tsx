@@ -162,7 +162,20 @@ function TutorSettings() {
         return;
       }
 
-      setUserData((prev: any) => mergeUserProfile(prev, response.data.user));
+      const updatedUser = response.data.user || userData;
+      const nextProfilePicture = profileImage ? previewImage : updatedUser?.tutor?.profilePicture || userData?.tutor?.profilePicture;
+
+      setUserData((prev: any) => {
+        if (!prev) return updatedUser;
+        return mergeUserProfile(prev, {
+          ...updatedUser,
+          tutor: {
+            ...(updatedUser?.tutor || prev.tutor || {}),
+            profilePicture: nextProfilePicture,
+          },
+        });
+      });
+
       setProfileSuccess('Profile updated successfully');
       setProfileImage(null);
     } catch (error: any) {

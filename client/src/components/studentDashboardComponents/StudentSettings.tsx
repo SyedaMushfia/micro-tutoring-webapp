@@ -146,7 +146,20 @@ function StudentSettings() {
         return;
       }
 
-      setUserData((prev: any) => mergeUserProfile(prev, response.data.user));
+      const updatedUser = response.data.user || userData;
+      const nextProfilePicture = profileImage ? previewImage : updatedUser?.student?.profilePicture || userData?.student?.profilePicture;
+
+      setUserData((prev: any) => {
+        if (!prev) return updatedUser;
+        return mergeUserProfile(prev, {
+          ...updatedUser,
+          student: {
+            ...(updatedUser?.student || prev.student || {}),
+            profilePicture: nextProfilePicture,
+          },
+        });
+      });
+
       setProfileSuccess('Profile updated successfully');
       setProfileImage(null);
     } catch (error: any) {
