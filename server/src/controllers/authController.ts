@@ -209,10 +209,11 @@ export const setupProfile = async (req: Request, res: Response) => {
                 userID._id,
                 {
                     $set: {
-                        tutor: {
-                            ...(userID.tutor || {}),
-                            ...updates,
-                        },
+                        "tutor.qualification": updates.qualification,
+                        "tutor.experience": updates.experience,
+                        "tutor.subjects": updates.subjects,
+                        "tutor.bio": updates.bio,
+                        "tutor.profilePicture": updates.profilePicture,
                     },
                 },
                 { new: true, runValidators: true }
@@ -226,14 +227,11 @@ export const setupProfile = async (req: Request, res: Response) => {
                 userID._id,
                 {
                     $set: {
-                        student: {
-                            ...(userID.student || {}),
-                            grade,
-                            curriculum,
-                            gender,
-                            institutionOrSchool,
-                            profilePicture,
-                        },
+                        "student.grade": grade,
+                        "student.curriculum": curriculum,
+                        "student.gender": gender,
+                        "student.institutionOrSchool": institutionOrSchool,
+                        "student.profilePicture": profilePicture,
                     },
                 },
                 { new: true }

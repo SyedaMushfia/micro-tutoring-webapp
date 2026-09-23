@@ -175,15 +175,14 @@ export const updateTutorProfile = async (req: Request, res: Response) => {
       const updatedUser = await userModel.findByIdAndUpdate(
         userId,
         {
-          firstName,
-          lastName,
-          student: {
-            ...(currentUser.student || {}),
-            grade,
-            curriculum,
-            gender,
-            institutionOrSchool,
-            profilePicture: nextProfilePicture,
+          $set: {
+            firstName,
+            lastName,
+            "student.grade": grade,
+            "student.curriculum": curriculum,
+            "student.gender": gender,
+            "student.institutionOrSchool": institutionOrSchool,
+            "student.profilePicture": nextProfilePicture,
           },
         },
         { new: true }
@@ -223,15 +222,14 @@ export const updateTutorProfile = async (req: Request, res: Response) => {
     const updatedUser = await userModel.findByIdAndUpdate(
       userId,
       {
-        firstName,
-        lastName,
-        tutor: {
-          ...(currentUser.tutor || {}),
-          qualification,
-          experience,
-          subjects,
-          bio,
-          profilePicture: nextProfilePicture,
+        $set: {
+          firstName,
+          lastName,
+          "tutor.qualification": qualification,
+          "tutor.experience": experience,
+          "tutor.subjects": subjects,
+          "tutor.bio": bio,
+          "tutor.profilePicture": nextProfilePicture,
         },
       },
       { new: true }
