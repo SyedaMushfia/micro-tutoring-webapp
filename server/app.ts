@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import fs from "fs";
+import path from "path";
 import express from "express";
 import type { Express } from "express";
 import cors from "cors";
@@ -79,6 +81,24 @@ app.use("/api/chat", chatRouter);
 app.use("/api/recharge", rechargeRouter);
 app.use("/api/earnings", earningRouter);
 app.use("/api/reviews", reviewRouter);
+
+const clientDistPath = (() => {
+    const candidatePaths = [
+        path.resolve(__dirname, "../client/dist"),
+        path.resolve(__dirname, "../../client/dist"),
+    ];
+
+    const foundPath = candidatePaths.find((candidate) => fs.existsSync(candidate));
+    return foundPath ?? path.resolve(__dirname, "../../client/dist");
+})();
+
+if (fs.existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+
+    app.get(/^(?!\/api).*/, (req, res) => {
+        res.sendFile(path.join(clientDistPath, "index.html"));
+    });
+}
 
 // Start server
 server.listen(port, () => console.log(`Server running on port ${port}`));

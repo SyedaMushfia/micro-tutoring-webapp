@@ -9,6 +9,7 @@ import reviewModel from "../models/reviewModel";
 import rechargeModel from "../models/rechargeModel";
 import earningModel from "../models/earningModel";
 import messageModel from "../models/messageModel";
+import { deleteCloudinaryImage } from "../config/cloudinary";
 
 const normalizeSubjects = (subjects: unknown) => {
   if (Array.isArray(subjects)) return subjects.filter(Boolean).map(String);
@@ -156,7 +157,15 @@ export const updateTutorProfile = async (req: Request, res: Response) => {
       const curriculum = String(req.body.curriculum ?? currentUser.student?.curriculum ?? "").trim();
       const gender = String(req.body.gender ?? currentUser.student?.gender ?? "").trim();
       const institutionOrSchool = String(req.body.institutionOrSchool ?? currentUser.student?.institutionOrSchool ?? "").trim();
-      const profilePicture = req.file?.path || currentUser.student?.profilePicture;
+      const nextProfilePicture = req.file?.path || currentUser.student?.profilePicture;
+
+      if (req.file?.path && currentUser.student?.profilePicture && currentUser.student.profilePicture !== req.file.path) {
+        try {
+          await deleteCloudinaryImage(currentUser.student.profilePicture);
+        } catch {
+          // ignore Cloudinary cleanup failures so the profile update can still succeed
+        }
+      }
 
       if (!grade || !curriculum || !gender || !institutionOrSchool) {
         return res.json({ success: false, message: "Please complete all required student profile fields" });
@@ -173,7 +182,7 @@ export const updateTutorProfile = async (req: Request, res: Response) => {
             curriculum,
             gender,
             institutionOrSchool,
-            profilePicture,
+            profilePicture: nextProfilePicture,
           },
         },
         { new: true }
@@ -195,7 +204,15 @@ export const updateTutorProfile = async (req: Request, res: Response) => {
     const bio = String(req.body.bio ?? currentUser.tutor?.bio ?? "").trim();
     const rawSubjects = req.body.subjects ?? req.body["subjects[]"] ?? currentUser.tutor?.subjects ?? [];
     const subjects = normalizeSubjects(rawSubjects);
-    const profilePicture = req.file?.path || currentUser.tutor?.profilePicture;
+    const nextProfilePicture = req.file?.path || currentUser.tutor?.profilePicture;
+
+    if (req.file?.path && currentUser.tutor?.profilePicture && currentUser.tutor.profilePicture !== req.file.path) {
+      try {
+        await deleteCloudinaryImage(currentUser.tutor.profilePicture);
+      } catch {
+        // ignore Cloudinary cleanup failures so the profile update can still succeed
+      }
+    }
 
     if (!qualification || !experience || !bio || subjects.length === 0) {
       return res.json({ success: false, message: "Please complete all required tutor profile fields" });
@@ -212,7 +229,7 @@ export const updateTutorProfile = async (req: Request, res: Response) => {
           experience,
           subjects,
           bio,
-          profilePicture,
+          profilePicture: nextProfilePicture,
         },
       },
       { new: true }

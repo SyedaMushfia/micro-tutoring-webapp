@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import userModel from "../models/userModel";
 import validator from 'validator';
+import { deleteCloudinaryImage } from "../config/cloudinary";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -183,6 +184,14 @@ export const setupProfile = async (req: Request, res: Response) => {
 
         let profilePicture = userID?.tutor?.profilePicture ?? userID?.student?.profilePicture;
         if (req.file) {
+            const previousProfile = userID?.role === 'tutor' ? userID?.tutor?.profilePicture : userID?.student?.profilePicture;
+            if (previousProfile && previousProfile !== req.file.path) {
+                try {
+                    await deleteCloudinaryImage(previousProfile);
+                } catch {
+                    // ignore Cloudinary cleanup failures so profile setup can still complete
+                }
+            }
             profilePicture = req.file.path;
         }
 
