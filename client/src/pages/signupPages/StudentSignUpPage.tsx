@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { mergeUserProfile, useAppContext } from '../../context/AppContext';
 import axios from 'axios';
 import Select from "react-select";
-import { optimizeImageFile } from '../../utils';
 
 function StudentSignUpPage() {
   const { backendUrl, setUserData } = useAppContext()
@@ -90,19 +89,12 @@ function StudentSignUpPage() {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const img = e.target.files?.[0];
     if (!img) return;
 
-    try {
-      const optimizedImage = await optimizeImageFile(img, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 });
-      setProfilePicture(optimizedImage);
-      setPreviewImg(URL.createObjectURL(optimizedImage));
-    } catch (error) {
-      console.error("Profile image optimization failed", error);
-      setProfilePicture(img);
-      setPreviewImg(URL.createObjectURL(img));
-    }
+    setProfilePicture(img);
+    setPreviewImg(URL.createObjectURL(img));
   }
 
   const handleFinish = async (e: React.FormEvent) => {

@@ -36,6 +36,7 @@ const allowedOrigins = [
 connectDB();
 
 const io = new Server(server, {
+    maxHttpBufferSize: 50 * 1024 * 1024,
     cors: {
         origin: (origin, callback) => {
             if (!origin || allowedOrigins.includes(origin)) {

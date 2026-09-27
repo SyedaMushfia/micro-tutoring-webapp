@@ -5,7 +5,6 @@ import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import { mergeUserProfile, useAppContext } from '../../context/AppContext';
-import { optimizeImageFile } from '../../utils';
 
 const subjectOptions = [
   { value: 'Mathematics', label: 'Mathematics' },
@@ -94,41 +93,23 @@ function TutorSettings() {
     setProfileForm(prev => ({ ...prev, subjects: values }));
   };
 
-  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    try {
-      const optimizedImage = await optimizeImageFile(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 });
-      const previewUrl = URL.createObjectURL(optimizedImage);
-      setProfileImage(optimizedImage);
-      setPreviewImage(previewUrl);
-      setUserData((prev: any) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          tutor: {
-            ...(prev.tutor || {}),
-            profilePicture: previewUrl,
-          },
-        };
-      });
-    } catch (error) {
-      console.error('Profile image optimization failed', error);
-      const previewUrl = URL.createObjectURL(file);
-      setProfileImage(file);
-      setPreviewImage(previewUrl);
-      setUserData((prev: any) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          tutor: {
-            ...(prev.tutor || {}),
-            profilePicture: previewUrl,
-          },
-        };
-      });
-    }
+    const previewUrl = URL.createObjectURL(file);
+    setProfileImage(file);
+    setPreviewImage(previewUrl);
+    setUserData((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        tutor: {
+          ...(prev.tutor || {}),
+          profilePicture: previewUrl,
+        },
+      };
+    });
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {

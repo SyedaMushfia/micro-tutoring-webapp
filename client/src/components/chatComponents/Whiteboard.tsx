@@ -25,7 +25,6 @@ function Whiteboard({ sessionId, isRecorded }: WhiteboardProps) {
   const whiteboardRef = useRef<HTMLDivElement | null>(null);
   const suppressViewportSync = useRef(false);
   const lastViewportKey = useRef<string | null>(null);
-  const lastSceneSignature = useRef<string>("");
   const [userId, setUserId] = useState<string>("");
 
   // Generate or retrieve unique userId from localStorage
@@ -74,13 +73,8 @@ function Whiteboard({ sessionId, isRecorded }: WhiteboardProps) {
 
         // Prevent recursive socket update loop
         isRemoteUpdate.current = true;
-        const sceneSignature = JSON.stringify({
-          elementIds: elements.map((element: any) => element.id),
-          fileIds: Object.keys(files ?? {}).sort(),
-        });
         excalidrawAPI.current.addFiles(Object.values(files));
         excalidrawAPI.current.updateScene({ elements });
-        lastSceneSignature.current = sceneSignature;
         isRemoteUpdate.current = false;
       });
 
@@ -127,48 +121,20 @@ function Whiteboard({ sessionId, isRecorded }: WhiteboardProps) {
         console.log("Received elements update", elements.length);
 
         if (!excalidrawAPI.current) return;
-        const sceneSignature = JSON.stringify({
-          elementIds: elements.map((element: any) => element.id),
-          fileIds: Object.keys(files ?? {}).sort(),
-        });
         isRemoteUpdate.current = true;
         excalidrawAPI.current.addFiles(Object.values(files));
         excalidrawAPI.current.updateScene({ elements });
-        lastSceneSignature.current = sceneSignature;
         isRemoteUpdate.current = false;
       });
 
       // Join after listeners are registered so the initial state cannot be missed.
       socket.emit("wb:join", { sessionId, userId });
 
-      const emitSceneUpdate = () => {
-        if (!excalidrawAPI.current || !sessionId || isRemoteUpdate.current || isRecorded) return;
-
-        const elements = excalidrawAPI.current.getSceneElements();
-        const files = excalidrawAPI.current.getFiles();
-        const sceneSignature = JSON.stringify({
-          elementIds: elements.map((element: any) => element.id),
-          fileIds: Object.keys(files ?? {}).sort(),
-        });
-
-        if (sceneSignature === lastSceneSignature.current) return;
-
-        lastSceneSignature.current = sceneSignature;
-
-        socket.emit("wb:elements", {
-          sessionId,
-          elements,
-          files: files ?? {},
-          userId: userData._id,
-          userName: userData.firstName,
-        });
-      };
-
       const handleKeyUp = (event: KeyboardEvent) => {
         if (!whiteboardRef.current?.contains(event.target as Node)) return;
         if (!excalidrawAPI.current || isRemoteUpdate.current) return;
 
-        emitSceneUpdate();
+        void emitWhiteboardElements();
       };
 
       document.addEventListener("keyup", handleKeyUp);
@@ -191,67 +157,89 @@ function Whiteboard({ sessionId, isRecorded }: WhiteboardProps) {
 
   };
 
-  const handlePointerUp = () => {
-    if (!excalidrawAPI.current || !sessionId || isRemoteUpdate.current || isRecorded) return;
+  const uploadWhiteboardFilesToCloudinary = async () => {
+    const files = excalidrawAPI.current?.getFiles();
+    const entries = Object.entries(files ?? {});
 
-    // Excalidraw applies eraser changes after pointer-up; read the scene next frame.
-    requestAnimationFrame(() => {
-      if (!excalidrawAPI.current || isRemoteUpdate.current || isRecorded) return;
-
-      const elements = excalidrawAPI.current.getSceneElements();
-      const files = excalidrawAPI.current.getFiles();
-      const sceneSignature = JSON.stringify({
-        elementIds: elements.map((element: any) => element.id),
-        fileIds: Object.keys(files ?? {}).sort(),
-      });
-
-      if (sceneSignature === lastSceneSignature.current) return;
-      lastSceneSignature.current = sceneSignature;
-
-      socket.emit("wb:elements", {
-        sessionId,
-        elements,
-        files: files ?? {},
-        userId: userData._id,
-        userName: userData.firstName,
-      });
-    });
-  };
-
-  const handleWhiteboardChange = (_elements: readonly any[], appState: any, files: BinaryFiles) => {
-    if (!sessionId || isRemoteUpdate.current || isRecorded || suppressViewportSync.current) return;
-
-    const hasSceneData = _elements.length > 0 || Object.keys(files ?? {}).length > 0;
-    if (!lastSceneSignature.current && !hasSceneData) return;
-
-    const viewportKey = `${appState.scrollX}:${appState.scrollY}:${appState.zoom.value}`;
-    if (viewportKey !== lastViewportKey.current) {
-      lastViewportKey.current = viewportKey;
-      socket.emit("wb:viewport", {
-        sessionId,
-        viewport: {
-          scrollX: appState.scrollX,
-          scrollY: appState.scrollY,
-          zoom: appState.zoom,
-        },
-      });
+    if (!entries.length) {
+      return {};
     }
 
-    const sceneSignature = JSON.stringify({
-      elementIds: _elements.map((element: any) => element.id),
-      fileIds: Object.keys(files ?? {}).sort(),
-    });
+    const uploadedFiles: BinaryFiles = {};
 
-    if (sceneSignature === lastSceneSignature.current) return;
+    for (const [fileId, file] of entries) {
+      if (!file || !file.mimeType?.startsWith("image/")) {
+        uploadedFiles[fileId] = file;
+        continue;
+      }
 
-    lastSceneSignature.current = sceneSignature;
+      const currentDataUrl = file.dataURL || "";
+      if (!currentDataUrl || (typeof currentDataUrl === "string" && currentDataUrl.startsWith("http"))) {
+        uploadedFiles[fileId] = { ...file, dataURL: currentDataUrl as any };
+        continue;
+      }
+
+      try {
+        const response = await fetch(currentDataUrl);
+        const blob = await response.blob();
+        const formData = new FormData();
+        formData.append("image", blob, `${fileId}.${file.mimeType.split("/")[1] || "png"}`);
+
+        const res = await axios.post(`${backendUrl}/api/chat/upload-image`, formData, {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (res.data?.success && res.data?.imageUrl) {
+          uploadedFiles[fileId] = { ...file, dataURL: res.data.imageUrl as any };
+          continue;
+        }
+      } catch (error) {
+        console.error("Whiteboard image upload failed", error);
+      }
+
+      uploadedFiles[fileId] = file;
+    }
+
+    return uploadedFiles;
+  };
+
+  const emitWhiteboardElements = async () => {
+    if (!excalidrawAPI.current || !sessionId || isRemoteUpdate.current || isRecorded) return;
+
+    const files = await uploadWhiteboardFilesToCloudinary();
 
     socket.emit("wb:elements", {
       sessionId,
-      elements: _elements,
-      files: files ?? {},
+      elements: excalidrawAPI.current.getSceneElements(),
+      files,
       userId: userData._id,
       userName: userData.firstName,
+    });
+  };
+
+  const handlePointerUp = () => {
+    if (!excalidrawAPI.current || !sessionId || isRemoteUpdate.current || isRecorded) return;
+
+    requestAnimationFrame(() => {
+      void emitWhiteboardElements();
+    });
+  };
+
+  const handleWhiteboardChange = (_elements: readonly any[], appState: any) => {
+    if (!sessionId || isRemoteUpdate.current || isRecorded || suppressViewportSync.current) return;
+
+    const viewportKey = `${appState.scrollX}:${appState.scrollY}:${appState.zoom.value}`;
+    if (viewportKey === lastViewportKey.current) return;
+    lastViewportKey.current = viewportKey;
+
+    socket.emit("wb:viewport", {
+      sessionId,
+      viewport: {
+        scrollX: appState.scrollX,
+        scrollY: appState.scrollY,
+        zoom: appState.zoom,
+      },
     });
   };
 

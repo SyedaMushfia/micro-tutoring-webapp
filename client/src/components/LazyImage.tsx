@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { getOptimizedCloudinaryUrl } from '../utils';
 
 interface LazyImageProps {
   src?: string;
@@ -14,8 +13,6 @@ function LazyImage({
   src,
   alt,
   className = '',
-  width,
-  height,
   placeholderClassName = 'bg-[#e9edf7]',
 }: LazyImageProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -45,10 +42,6 @@ function LazyImage({
     return () => observer.disconnect();
   }, [src]);
 
-  const imageSrc = src
-    ? getOptimizedCloudinaryUrl(src, { width: width ?? 200, height: height ?? 200, crop: 'fill' }) || src
-    : undefined;
-
   if (!src) {
     return <div className={`${placeholderClassName} ${className}`} aria-label={alt} />;
   }
@@ -59,7 +52,7 @@ function LazyImage({
         <div className={`${placeholderClassName} h-full w-full`} aria-label={alt} />
       ) : (
         <img
-          src={imageSrc}
+          src={src}
           alt={alt}
           loading="lazy"
           className='h-full w-full object-cover'

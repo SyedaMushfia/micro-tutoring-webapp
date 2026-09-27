@@ -4,7 +4,6 @@ import ErrorIcon from '@mui/icons-material/Error';
 import AvailableTutorsModal from './AvailableTutorsModal';
 import axios from 'axios';
 import { useAppContext } from '../../context/AppContext';
-import { optimizeImageFile } from '../../utils';
 
 function AskQuestion() {
   const [image, setImage] = useState<File | null>(null);
@@ -43,19 +42,12 @@ function AskQuestion() {
     setError('');
   }
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const img = e.target.files?.[0];
     if (!img) return;
 
-    try {
-      const optimizedImage = await optimizeImageFile(img, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 });
-      setImage(optimizedImage);
-      setPreviewImg(URL.createObjectURL(optimizedImage));
-    } catch (error) {
-      console.error('Question image optimization failed', error);
-      setImage(img);
-      setPreviewImg(URL.createObjectURL(img));
-    }
+    setImage(img);
+    setPreviewImg(URL.createObjectURL(img));
   }
 
   const questionPrice = 250;
