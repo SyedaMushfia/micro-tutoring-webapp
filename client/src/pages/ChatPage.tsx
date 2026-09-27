@@ -31,6 +31,7 @@ function ChatPage() {
   const [isRecorded, setIsRecorded] = useState(false);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const [tutorId, setTutorId] = useState<string | null>(null);
+  const [otherParticipantId, setOtherParticipantId] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
@@ -89,14 +90,33 @@ function ChatPage() {
         // Identify the other user (student or tutor)
         const otherParticipant = session.tutor._id === userData._id ? session.student : session.tutor;
 
+        setOtherParticipantId(otherParticipant._id ?? null);
         setOtherUser({
           name: `${otherParticipant.firstName} ${otherParticipant.lastName}`,
           profilePicture: otherParticipant.profilePicture,
-          online: otherParticipant.isOnline
+          online: Boolean(otherParticipant.isOnline)
         });
       })
       .catch (error => console.error(error));
   }, [backendUrl, sessionId, userData])
+
+  useEffect(() => {
+    if (!otherParticipantId) return;
+
+    const handleStatusUpdate = ({ userId, isOnline }: { userId: string; isOnline: boolean }) => {
+      if (userId !== otherParticipantId) return;
+
+      setOtherUser((prev) => prev ? { ...prev, online: isOnline } : prev);
+    };
+
+    socket.on("tutor-status-updated", handleStatusUpdate);
+    socket.on("student-status-updated", handleStatusUpdate);
+
+    return () => {
+      socket.off("tutor-status-updated", handleStatusUpdate);
+      socket.off("student-status-updated", handleStatusUpdate);
+    };
+  }, [otherParticipantId]);
 
   // Listen for session-ended event from server. Show wallet deduction/credit message.
   useEffect(() => {

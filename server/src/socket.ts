@@ -110,6 +110,7 @@ export const setupSocket = (io: Server) => {
                     socket.join(`tutor:${userId}`);
                     socket.data.tutorId = userId;
                     socket.data.role = "tutor";
+                    socket.data.userId = userId;
                 } else {
                     onlineTutors.delete(userId);
                     socket.leave(`tutor:${userId}`);
@@ -121,10 +122,13 @@ export const setupSocket = (io: Server) => {
             if (role === "student") {
                 if (isOnline) {
                     onlineStudents.set(userId, socket.id);
+                    socket.join(`student:${userId}`);
                     socket.data.studentId = userId;
                     socket.data.role = "student";
+                    socket.data.userId = userId;
                 } else {
                     onlineStudents.delete(userId);
+                    socket.leave(`student:${userId}`);
                     delete socket.data.studentId;
                     if (socket.data.role === "student") delete socket.data.role;
                 }
