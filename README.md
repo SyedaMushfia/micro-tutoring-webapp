@@ -38,6 +38,11 @@ QuickTutor is a web-based micro-tutoring platform that provides instant academic
 
 ## Live Demo
 
+Student-side flow of the Micro-Tutoring Platform, showcasing how a student finds a tutor and joins a real-time tutoring session.
+
+
+
+
 
 ## Tech Stack
 
